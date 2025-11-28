@@ -108,7 +108,7 @@ async function searchSupabaseProducts(query, page = 1, limit = 20) {
     // Search in name, description, or SKU
     // Adjust column names based on your Supabase schema
     let searchQuery = supabase
-      .from('products')
+      .from('products_v2')
       .select('*', { count: 'exact' })
       .or(`name.ilike.%${query}%,description.ilike.%${query}%,sku.ilike.%${query}%`)
       .order('created_at', { ascending: false })
