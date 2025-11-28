@@ -170,8 +170,10 @@ app.get('/products', async (req, res) => {
     console.log(`   Found ${products.length} products from Supabase`);
 
     // Add customizable flag
+    // By default, mark all products as customizable (Zakeke might only show customizable products)
     products.forEach(product => {
-      product.customizable = customizableProducts.has(product.id);
+      // Check if explicitly marked, otherwise default to true
+      product.customizable = customizableProducts.has(product.id) || customizableProducts.has(product.code) || true;
     });
 
     // Check if client expects simple array format (some integrations do)
