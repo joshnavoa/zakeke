@@ -29,8 +29,8 @@ app.use(cors());
 app.use(express.json());
 
 // Your Zakeke credentials (for authentication)
-const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID || '320250';
-const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY || '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.';
+const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID || '323181';
+const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY || 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.';
 
 // Zakeke API configuration (products are in Zakeke)
 const ZAKEKE_API_URL = process.env.ZAKEKE_API_URL || 'https://api.zakeke.com';

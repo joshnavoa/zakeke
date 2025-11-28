@@ -13,8 +13,8 @@
 // NOTE: For Webflow, you set credentials directly here (no .env file needed)
 // The API key will be visible in browser source - this is normal for client-side integrations
 const ZAKEKE_CONFIG = {
-  tenantId: '320250',
-  apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
+  tenantId: '323181',
+  apiKey: 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.',
   apiUrl: 'https://api.zakeke.com', // or your custom domain
   customizerUrl: 'https://customizer.zakeke.com' // or your custom domain
 };
