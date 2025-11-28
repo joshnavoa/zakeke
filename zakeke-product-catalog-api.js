@@ -62,30 +62,74 @@ app.get('/health', (req, res) => {
 });
 
 // Root endpoint - some integrations check this first
-// Zakeke might call this with ?page=1 expecting products
-app.get('/', (req, res) => {
+// Zakeke calls this with ?page=1 expecting products - we'll return products here
+app.get('/', async (req, res) => {
   console.log('📦 GET / (root) called');
   console.log('   User-Agent:', req.headers['user-agent'] || 'undefined');
   console.log('   Authorization:', req.headers['authorization'] ? 'Present' : 'Missing');
   console.log('   Query params:', JSON.stringify(req.query));
   
-  // If Zakeke calls root with page parameter, they might expect products here
-  // But we'll redirect them to /products instead
+  // If Zakeke calls root with page parameter, they expect products here
   if (req.query.page || req.query.limit) {
-    console.log('   ⚠️ Zakeke called root with pagination params - redirecting to /products');
-    // Don't redirect, just return the info - Zakeke should call /products
-    res.json({ 
-      status: 'ok', 
-      service: 'Zakeke Product Catalog API',
-      endpoints: {
-        products: '/products',
-        search: '/products/search',
-        health: '/health'
-      },
-      message: 'Use /products endpoint to fetch products',
-      note: 'If you called this with ?page=1, please use /products?page=1 instead'
-    });
+    console.log('   ✅ Zakeke called root with pagination params - returning products');
+    
+    // Check if auth is present (Zakeke sends auth even to root)
+    const hasAuth = req.headers['authorization'];
+    if (!hasAuth) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'Use HTTP Basic Auth with Zakeke credentials'
+      });
+    }
+    
+    // Delegate to products endpoint logic
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const sort = req.query.sort || 'created_at';
+      const order = req.query.order || 'DESC';
+
+      // Fetch products from Supabase
+      const supabaseProducts = await fetchSupabaseProducts(page, limit, sort, order);
+      const products = supabaseProducts.items || supabaseProducts.products || [];
+
+      console.log(`   Found ${products.length} products from Supabase`);
+
+      // Add customizable flag
+      products.forEach(product => {
+        product.customizable = true;
+      });
+
+      const response = {
+        products: products,
+        pagination: {
+          page: page,
+          limit: limit,
+          total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
+          totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
+        }
+      };
+      
+      console.log(`   Returning ${products.length} products from root endpoint`);
+      if (products.length > 0) {
+        console.log('   Sample product:', {
+          code: products[0].code,
+          name: products[0].name,
+          hasThumbnail: !!products[0].thumbnail,
+          price: products[0].price
+        });
+      }
+
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching products from root:', error);
+      return res.status(500).json({ 
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   } else {
+    // No pagination params - return API info
     res.json({ 
       status: 'ok', 
       service: 'Zakeke Product Catalog API',
@@ -187,8 +231,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply auth to all other routes
-app.use(authMiddleware);
+// Apply auth to all other routes (except root which handles its own auth)
+app.use((req, res, next) => {
+  // Skip auth for root endpoint (it handles auth internally when needed)
+  if (req.path === '/' && (req.query.page || req.query.limit)) {
+    // Root with pagination - auth is checked in the route handler
+    return next();
+  }
+  // Apply auth middleware to all other routes
+  authMiddleware(req, res, next);
+});
 
 /**
  * GET /products
