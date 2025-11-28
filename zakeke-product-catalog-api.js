@@ -346,28 +346,49 @@ app.get('/products/search', async (req, res) => {
 /**
  * GET /products/:productId/options
  * Retrieve product options/variants
+ * According to PHP example: https://gist.github.com/NicolaBizzoca/56fa9b0ba327364bbf3bfe575f3e129e
+ * Should return array of option groups: [{code, name, values: [{code, name}]}]
  */
 app.get('/products/:productId/options', async (req, res) => {
   try {
     const productId = req.params.productId;
+    console.log(`📦 GET /products/${productId}/options called`);
 
     // Fetch product from Supabase
     const supabaseProduct = await fetchSupabaseProduct(productId);
 
     if (!supabaseProduct) {
+      console.log(`   Product ${productId} not found`);
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Get variants/options from Supabase
-    const options = await fetchSupabaseProductVariants(productId);
+    const variants = await fetchSupabaseProductVariants(productId);
+    console.log(`   Found ${variants.length} variants for product ${productId}`);
 
-    res.json({
-      productId: productId,
-      options: options
-    });
+    // Transform variants to Zakeke options format
+    // Zakeke expects: [{code, name, values: [{code, name}]}]
+    // If no variants, return empty array (not null/undefined)
+    const options = variants.length > 0 ? variants.map(variant => ({
+      code: variant.code || variant.id || String(variant.id),
+      name: variant.name || 'Default',
+      values: variant.values || [{
+        code: variant.code || variant.id || String(variant.id),
+        name: variant.name || 'Default'
+      }],
+      // Add metadata as empty object if not present (to prevent undefined errors)
+      metadata: variant.metadata || {}
+    })) : [];
+
+    // Always return an array, even if empty
+    // Zakeke expects: [] not null or undefined
+    console.log(`   Returning ${options.length} options`);
+    
+    res.json(options);
   } catch (error) {
     console.error('Error fetching product options:', error);
-    res.status(500).json({ error: error.message });
+    // Return empty array on error, not error object
+    res.json([]);
   }
 });
 
