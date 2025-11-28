@@ -107,15 +107,28 @@ function setupCustomizerButton(customizer, productId, variantId) {
       const productContainer = document.querySelector('[data-zakeke-product-id]');
       if (productContainer) {
         productContainer.appendChild(customizerButton);
+      } else {
+        // Last resort: append to body (shouldn't happen, but fallback)
+        console.warn('Zakeke: Could not find product container, appending button to body');
+        document.body.appendChild(customizerButton);
       }
     }
   }
 
+  // Remove any existing listeners to avoid duplicates
+  const newButton = customizerButton.cloneNode(true);
+  customizerButton.parentNode.replaceChild(newButton, customizerButton);
+  customizerButton = newButton;
+
   // Add click handler - use iframe-based customizer
   customizerButton.addEventListener('click', (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Zakeke: Button clicked, opening customizer...');
     openCustomizerIframe(productId, variantId);
   });
+  
+  console.log('Zakeke: Button setup complete', customizerButton);
 }
 
 // Open Zakeke customizer using iframe (Zakeke's standard approach)
