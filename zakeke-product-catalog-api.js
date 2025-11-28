@@ -42,7 +42,12 @@ const authMiddleware = basicAuth({
   realm: 'Zakeke Product Catalog API'
 });
 
-// Apply auth to all routes
+// Health check endpoint (no auth required)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'Zakeke Product Catalog API' });
+});
+
+// Apply auth to all other routes
 app.use(authMiddleware);
 
 /**
@@ -293,10 +298,7 @@ async function fetchZakekeProduct(productId) {
   }
 }
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Zakeke Product Catalog API' });
-});
+// Health check endpoint is defined above (before auth middleware)
 
 // Railway automatically sets PORT, fallback to 3000 for local development
 const PORT = process.env.PORT || 3000;
