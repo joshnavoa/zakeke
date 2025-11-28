@@ -53,6 +53,80 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'Zakeke Product Catalog API' });
 });
 
+// Schema inspection endpoint (for debugging - requires auth)
+app.get('/schema', async (req, res) => {
+  try {
+    const { fetchSupabaseProduct } = require('./supabase-integration');
+    
+    // Try to fetch one product to see structure
+    const { supabase } = require('./supabase-integration');
+    
+    if (!supabase) {
+      return res.json({ 
+        error: 'Supabase not configured',
+        message: 'Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('products_v2')
+      .select('*')
+      .limit(1);
+
+    if (error) {
+      return res.status(500).json({ 
+        error: 'Database error',
+        message: error.message,
+        code: error.code,
+        hint: error.hint
+      });
+    }
+
+    if (!data || data.length === 0) {
+      return res.json({ 
+        message: 'No products found in table',
+        suggestion: 'Add at least one product to products_v2 table to see schema'
+      });
+    }
+
+    const sampleProduct = data[0];
+    const columns = Object.keys(sampleProduct);
+    
+    // Analyze column types
+    const columnInfo = columns.map(col => ({
+      name: col,
+      type: typeof sampleProduct[col],
+      sample: sampleProduct[col] !== null && sampleProduct[col] !== undefined 
+        ? String(sampleProduct[col]).substring(0, 100)
+        : 'null',
+      isNull: sampleProduct[col] === null
+    }));
+
+    res.json({
+      success: true,
+      table: 'products_v2',
+      totalColumns: columns.length,
+      columns: columnInfo,
+      sampleProduct: sampleProduct,
+      suggestedMappings: {
+        id: columns.find(c => c.toLowerCase().includes('id') && !c.toLowerCase().includes('product')),
+        name: columns.find(c => ['name', 'title', 'product_name'].includes(c.toLowerCase())),
+        description: columns.find(c => ['description', 'desc', 'details'].includes(c.toLowerCase())),
+        price: columns.find(c => ['price', 'amount', 'cost'].includes(c.toLowerCase()) && !c.toLowerCase().includes('cents')),
+        image: columns.find(c => ['image', 'photo', 'thumbnail', 'main_image', 'image_url'].some(term => c.toLowerCase().includes(term))),
+        sku: columns.find(c => ['sku', 'code', 'product_sku'].includes(c.toLowerCase())),
+        stock: columns.find(c => ['stock', 'inventory', 'quantity', 'qty'].includes(c.toLowerCase())),
+        created_at: columns.find(c => ['created_at', 'created', 'date_created'].includes(c.toLowerCase()))
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Apply auth to all other routes
 app.use(authMiddleware);
 
