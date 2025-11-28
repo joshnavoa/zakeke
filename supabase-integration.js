@@ -327,6 +327,8 @@ function transformSupabaseProduct(supabaseProduct) {
     image: image, // Keep image for backward compatibility
     sku: sku,
     stock: stock,
+    // Add metadata to prevent undefined errors (Zakeke expects this field)
+    metadata: supabaseProduct.metadata || {},
     // Add other fields as needed
     // category: supabaseProduct.category,
     // tags: supabaseProduct.tags,
