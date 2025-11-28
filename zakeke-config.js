@@ -19,8 +19,8 @@
 // TODO: Set these values from your .env or environment
 // For production, consider serving this config from your server API
 const ZAKEKE_CONFIG = {
-  tenantId: process.env.ZAKEKE_TENANT_ID || '323181', // Will use env if available (e.g., in build process)
-  apiKey: process.env.ZAKEKE_API_KEY || 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.', // Will use env if available
+  tenantId: process.env.ZAKEKE_TENANT_ID || '320250', // Will use env if available (e.g., in build process)
+  apiKey: process.env.ZAKEKE_API_KEY || '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.', // Will use env if available
   apiUrl: process.env.ZAKEKE_API_URL || 'https://api.zakeke.com',
   customizerUrl: process.env.ZAKEKE_CUSTOMIZER_URL || 'https://customizer.zakeke.com'
 };
