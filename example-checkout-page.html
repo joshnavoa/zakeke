@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Zakeke Integration Example</title>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .checkout-form {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 8px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    button[type="submit"] {
+      width: 100%;
+      padding: 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button[type="submit"]:hover {
+      background: #0056b3;
+    }
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Checkout</h1>
+  
+  <!-- Checkout Form with Zakeke Integration -->
+  <form class="checkout-form" data-wf-checkout>
+    
+    <h2>Customer Information</h2>
+    
+    <div class="form-group">
+      <label for="email">Email *</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">First Name *</label>
+        <input type="text" id="firstName" name="firstName" required>
+      </div>
+      <div class="form-group">
+        <label for="lastName">Last Name *</label>
+        <input type="text" id="lastName" name="lastName" required>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" name="phone">
+    </div>
+    
+    <h2>Shipping Address</h2>
+    
+    <div class="form-group">
+      <label for="shippingAddress">Address *</label>
+      <input type="text" id="shippingAddress" name="shippingAddress" required>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="shippingCity">City *</label>
+        <input type="text" id="shippingCity" name="shippingCity" required>
+      </div>
+      <div class="form-group">
+        <label for="shippingState">State *</label>
+        <input type="text" id="shippingState" name="shippingState" required>
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="shippingZip">ZIP Code *</label>
+        <input type="text" id="shippingZip" name="shippingZip" required>
+      </div>
+      <div class="form-group">
+        <label for="shippingCountry">Country *</label>
+        <input type="text" id="shippingCountry" name="shippingCountry" value="United States" required>
+      </div>
+    </div>
+    
+    <button type="submit">Complete Order</button>
+  </form>
+
+  <!-- Zakeke Configuration -->
+  <script src="zakeke-config.js"></script>
+  
+  <!-- Zakeke Order API -->
+  <script src="zakeke-order-api.js"></script>
+  
+  <!-- Zakeke Webflow Integration -->
+  <script src="zakeke-webflow-integration.js"></script>
+  
+  <script>
+    // The checkout form will automatically:
+    // 1. Collect form data
+    // 2. Get cart items from zakekeCart
+    // 3. Create order via Zakeke Order API
+    // 4. Redirect to success page
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,30 @@
+{
+  "name": "zakeke-webflow-integration",
+  "version": "1.0.0",
+  "description": "Zakeke integration for Webflow projects",
+  "scripts": {
+    "start": "node zakeke-product-catalog-api.js",
+    "test": "http-server -p 8000 -o test-local.html",
+    "serve": "http-server -p 8000",
+    "api": "node zakeke-product-catalog-api.js",
+    "api:dev": "nodemon zakeke-product-catalog-api.js"
+  },
+  "keywords": [
+    "zakeke",
+    "webflow",
+    "product-customization"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-basic-auth": "^1.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "nodemon": "^3.0.1"
+  }
+}
+
