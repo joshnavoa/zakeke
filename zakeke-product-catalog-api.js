@@ -280,28 +280,11 @@ app.get('/products', async (req, res) => {
       product.customizable = true;
     });
 
-    // Check if client expects simple array format (some integrations do)
-    const acceptHeader = req.headers.accept || '';
-    const userAgent = req.headers['user-agent'] || '';
-    const isZakekeRequest = userAgent.toLowerCase().includes('zakeke') || 
-                            req.query.format === 'simple';
-
-    console.log('   User-Agent contains "zakeke":', userAgent.toLowerCase().includes('zakeke'));
-    console.log('   Accept header:', acceptHeader);
-    console.log('   Request might be from Zakeke (no User-Agent):', !req.headers['user-agent']);
-
-    // Standard format with products and pagination (Zakeke expects this format)
-    const response = {
-      products: products,
-      pagination: {
-        page: page,
-        limit: limit,
-        total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
-        totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
-      }
-    };
-    
-    console.log('   Returning standard format with pagination');
+    // Zakeke Product Catalog API expects a simple array, not an object
+    // According to PHP example: https://gist.github.com/NicolaBizzoca/56fa9b0ba327364bbf3bfe575f3e129e
+    // Response should be: [{code, name, thumbnail}, ...]
+    // NOT {products: [...], pagination: {...}}
+    console.log('   Returning simple array format (Zakeke standard)');
 
     console.log(`   Returning ${products.length} products`);
     if (products.length > 0) {
@@ -313,7 +296,8 @@ app.get('/products', async (req, res) => {
       });
     }
 
-    res.json(response);
+    // Return simple array (Zakeke format per documentation and PHP example)
+    res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
     console.error('Error stack:', error.stack);
