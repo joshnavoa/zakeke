@@ -62,25 +62,41 @@ app.get('/health', (req, res) => {
 });
 
 // Root endpoint - some integrations check this first
+// Zakeke might call this with ?page=1 expecting products
 app.get('/', (req, res) => {
   console.log('📦 GET / (root) called');
   console.log('   User-Agent:', req.headers['user-agent'] || 'undefined');
   console.log('   Authorization:', req.headers['authorization'] ? 'Present' : 'Missing');
-  console.log('   All headers:', JSON.stringify(req.headers, null, 2));
   console.log('   Query params:', JSON.stringify(req.query));
   
-  // Some integrations might expect products at root or a different format
-  // Log this so we can see what Zakeke is requesting
-  res.json({ 
-    status: 'ok', 
-    service: 'Zakeke Product Catalog API',
-    endpoints: {
-      products: '/products',
-      search: '/products/search',
-      health: '/health'
-    },
-    message: 'Use /products endpoint to fetch products'
-  });
+  // If Zakeke calls root with page parameter, they might expect products here
+  // But we'll redirect them to /products instead
+  if (req.query.page || req.query.limit) {
+    console.log('   ⚠️ Zakeke called root with pagination params - redirecting to /products');
+    // Don't redirect, just return the info - Zakeke should call /products
+    res.json({ 
+      status: 'ok', 
+      service: 'Zakeke Product Catalog API',
+      endpoints: {
+        products: '/products',
+        search: '/products/search',
+        health: '/health'
+      },
+      message: 'Use /products endpoint to fetch products',
+      note: 'If you called this with ?page=1, please use /products?page=1 instead'
+    });
+  } else {
+    res.json({ 
+      status: 'ok', 
+      service: 'Zakeke Product Catalog API',
+      endpoints: {
+        products: '/products',
+        search: '/products/search',
+        health: '/health'
+      },
+      message: 'Use /products endpoint to fetch products'
+    });
+  }
 });
 
 // Schema inspection endpoint (for debugging - requires auth)
