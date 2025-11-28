@@ -56,7 +56,13 @@ app.get('/health', (req, res) => {
 // Root endpoint - some integrations check this first
 app.get('/', (req, res) => {
   console.log('📦 GET / (root) called');
-  console.log('   User-Agent:', req.headers['user-agent']);
+  console.log('   User-Agent:', req.headers['user-agent'] || 'undefined');
+  console.log('   Authorization:', req.headers['authorization'] ? 'Present' : 'Missing');
+  console.log('   All headers:', JSON.stringify(req.headers, null, 2));
+  console.log('   Query params:', JSON.stringify(req.query));
+  
+  // Some integrations might expect products at root or a different format
+  // Log this so we can see what Zakeke is requesting
   res.json({ 
     status: 'ok', 
     service: 'Zakeke Product Catalog API',
@@ -64,7 +70,8 @@ app.get('/', (req, res) => {
       products: '/products',
       search: '/products/search',
       health: '/health'
-    }
+    },
+    message: 'Use /products endpoint to fetch products'
   });
 });
 
