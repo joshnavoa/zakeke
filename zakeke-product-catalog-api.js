@@ -159,22 +159,38 @@ app.get('/products', async (req, res) => {
       product.customizable = customizableProducts.has(product.id);
     });
 
-    const response = {
-      products: products,
-      pagination: {
-        page: page,
-        limit: limit,
-        total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
-        totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
-      }
-    };
+    // Check if client expects simple array format (some integrations do)
+    const acceptHeader = req.headers.accept || '';
+    const userAgent = req.headers['user-agent'] || '';
+    const isZakekeRequest = userAgent.toLowerCase().includes('zakeke') || 
+                            req.query.format === 'simple';
+
+    let response;
+    if (isZakekeRequest && req.query.format === 'array') {
+      // Return simple array format (for testing)
+      response = products;
+      console.log('   Returning simple array format');
+    } else {
+      // Standard format with products and pagination
+      response = {
+        products: products,
+        pagination: {
+          page: page,
+          limit: limit,
+          total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
+          totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
+        }
+      };
+      console.log('   Returning standard format with pagination');
+    }
 
     console.log(`   Returning ${products.length} products`);
     if (products.length > 0) {
       console.log('   Sample product:', {
         code: products[0].code,
         name: products[0].name,
-        hasThumbnail: !!products[0].thumbnail
+        hasThumbnail: !!products[0].thumbnail,
+        price: products[0].price
       });
     }
 
