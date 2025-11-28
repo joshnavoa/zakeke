@@ -43,7 +43,7 @@ async function fetchSupabaseProducts(page = 1, limit = 20, sort = 'created_at', 
 
     // Build query
     let query = supabase
-      .from('products') // Adjust table name if different
+      .from('products_v2') // Using products_v2 table
       .select('*', { count: 'exact' })
       .order(sort, { ascending: order === 'ASC' })
       .range(offset, offset + limit - 1);
@@ -159,7 +159,7 @@ async function fetchSupabaseProduct(productId) {
 
   try {
     const { data, error } = await supabase
-      .from('products')
+      .from('products_v2')
       .select('*')
       .eq('id', productId)
       .single();
