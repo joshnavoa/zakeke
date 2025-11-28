@@ -267,7 +267,9 @@ function transformSupabaseProduct(supabaseProduct) {
 
   // Try to find price (handle different formats)
   let price = 0;
-  if (supabaseProduct.price) {
+  if (supabaseProduct.default_price) {
+    price = parseFloat(supabaseProduct.default_price);
+  } else if (supabaseProduct.price) {
     price = parseFloat(supabaseProduct.price);
   } else if (supabaseProduct.price_amount) {
     price = parseFloat(supabaseProduct.price_amount);
