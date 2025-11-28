@@ -28,15 +28,8 @@
     return;
   }
   
-  // Wait for Zakeke customizer script to load
+  // Initialize Zakeke customizer directly
   function initZakekeCustomizer() {
-    // Check if Zakeke customizer script is loaded
-    if (typeof window.Zakeke === 'undefined' && typeof window.ZakekeConfigurator === 'undefined') {
-      console.log('Zakeke Customizer: Waiting for Zakeke script to load...');
-      setTimeout(initZakekeCustomizer, 100);
-      return;
-    }
-    
     console.log('Zakeke Customizer: Initializing customizer...');
     
     // Create container for customizer
@@ -45,9 +38,17 @@
     container.style.width = '100%';
     container.style.height = '100vh';
     container.style.minHeight = '600px';
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.zIndex = '9999';
+    container.style.backgroundColor = '#fff';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.overflow = 'hidden';
     document.body.appendChild(container);
     
-    // Try to initialize using Zakeke Configurator UI API
+    // Try to get customizer URL from Configurator API first
     const configuratorApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/configurator/url`;
     
     fetch(configuratorApiUrl, {
@@ -72,59 +73,73 @@
     .then(data => {
       console.log('Zakeke Customizer: Configurator API response:', data);
       
-      if (data.url && !data.url.includes('wordpress')) {
-        // Use the URL from the API
-        const iframe = document.createElement('iframe');
-        iframe.src = data.url;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.setAttribute('allow', 'camera; microphone; fullscreen');
-        iframe.setAttribute('allowfullscreen', 'true');
-        container.appendChild(iframe);
-        console.log('Zakeke Customizer: Loaded customizer from API URL:', data.url);
+      let customizerUrl = null;
+      
+      if (data.url && !data.url.includes('wordpress') && !data.url.includes('translate.zakeke.com')) {
+        customizerUrl = data.url;
+        console.log('Zakeke Customizer: Using URL from Configurator API:', customizerUrl);
       } else {
-        // Fallback: Build customizer URL manually
-        const customizerUrl = new URL(`${ZAKEKE_CONFIG.customizerUrl}/`);
-        customizerUrl.searchParams.set('tenant', ZAKEKE_CONFIG.tenantId);
-        customizerUrl.searchParams.set('productid', productId);
-        customizerUrl.searchParams.set('quantity', quantity.toString());
+        // Fallback: Use Zakeke's portal customizer
+        // Based on Zakeke documentation, the format should be:
+        // https://portal.zakeke.com/customizer?tenant=XXX&productid=XXX
+        customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}`;
         if (variantId) {
-          customizerUrl.searchParams.set('variantid', variantId);
+          customizerUrl += `&variantid=${variantId}`;
         }
-        
-        const iframe = document.createElement('iframe');
-        iframe.src = customizerUrl.toString();
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.setAttribute('allow', 'camera; microphone; fullscreen');
-        iframe.setAttribute('allowfullscreen', 'true');
-        container.appendChild(iframe);
-        console.log('Zakeke Customizer: Loaded customizer from fallback URL:', customizerUrl.toString());
-      }
-    })
-    .catch(error => {
-      console.error('Zakeke Customizer: Error getting customizer URL:', error);
-      
-      // Fallback: Build customizer URL manually
-      const customizerUrl = new URL(`${ZAKEKE_CONFIG.customizerUrl}/`);
-      customizerUrl.searchParams.set('tenant', ZAKEKE_CONFIG.tenantId);
-      customizerUrl.searchParams.set('productid', productId);
-      customizerUrl.searchParams.set('quantity', quantity.toString());
-      if (variantId) {
-        customizerUrl.searchParams.set('variantid', variantId);
+        console.log('Zakeke Customizer: Using fallback portal URL:', customizerUrl);
       }
       
+      // Create iframe with customizer
       const iframe = document.createElement('iframe');
-      iframe.src = customizerUrl.toString();
+      iframe.id = 'zakeke-customizer-iframe';
+      iframe.src = customizerUrl;
       iframe.style.width = '100%';
       iframe.style.height = '100%';
       iframe.style.border = 'none';
       iframe.setAttribute('allow', 'camera; microphone; fullscreen');
       iframe.setAttribute('allowfullscreen', 'true');
       container.appendChild(iframe);
-      console.log('Zakeke Customizer: Using fallback URL:', customizerUrl.toString());
+      
+      console.log('Zakeke Customizer: Iframe created and loading:', customizerUrl);
+      
+      // Handle iframe load
+      iframe.onload = () => {
+        console.log('Zakeke Customizer: Iframe loaded successfully');
+      };
+      
+      iframe.onerror = () => {
+        console.error('Zakeke Customizer: Failed to load iframe');
+        container.innerHTML = `
+          <div style="padding: 40px; text-align: center; font-family: Arial, sans-serif;">
+            <h2>Failed to Load Customizer</h2>
+            <p>URL: ${customizerUrl}</p>
+            <p>Please check:</p>
+            <ul style="text-align: left; display: inline-block;">
+              <li>Your Zakeke configuration</li>
+              <li>That the product is published in Zakeke</li>
+              <li>That the Product Catalog API is configured</li>
+            </ul>
+          </div>
+        `;
+      };
+    })
+    .catch(error => {
+      console.error('Zakeke Customizer: Error getting customizer URL:', error);
+      
+      // Fallback: Use portal customizer directly
+      const customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}` + (variantId ? `&variantid=${variantId}` : '');
+      
+      const iframe = document.createElement('iframe');
+      iframe.id = 'zakeke-customizer-iframe';
+      iframe.src = customizerUrl;
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.setAttribute('allow', 'camera; microphone; fullscreen');
+      iframe.setAttribute('allowfullscreen', 'true');
+      container.appendChild(iframe);
+      
+      console.log('Zakeke Customizer: Using direct portal URL after error:', customizerUrl);
     });
     
     // Listen for messages from parent window (if loaded in iframe)
