@@ -10,14 +10,25 @@ if (typeof ZAKEKE_CONFIG === 'undefined') {
 function loadZakekeScript() {
   return new Promise((resolve, reject) => {
     if (window.ZakekeCustomizer) {
+      console.log('Zakeke: Customizer already loaded');
       resolve();
       return;
     }
 
     const script = document.createElement('script');
-    script.src = `${ZAKEKE_CONFIG.customizerUrl}/customizer.js`;
-    script.onload = resolve;
-    script.onerror = reject;
+    const scriptUrl = `${ZAKEKE_CONFIG.customizerUrl}/customizer.js`;
+    console.log('Zakeke: Attempting to load script from:', scriptUrl);
+    
+    script.src = scriptUrl;
+    script.onload = () => {
+      console.log('Zakeke: Script loaded successfully');
+      resolve();
+    };
+    script.onerror = (error) => {
+      console.error('Zakeke: Failed to load customizer script from:', scriptUrl);
+      console.error('Zakeke: Error details:', error);
+      reject(new Error(`Failed to load Zakeke customizer script from ${scriptUrl}. Check if the URL is correct and accessible.`));
+    };
     document.head.appendChild(script);
   });
 }
@@ -25,17 +36,21 @@ function loadZakekeScript() {
 // Initialize Zakeke on product page
 async function initZakekeOnProductPage() {
   try {
-    // Wait for Zakeke script to load
-    await loadZakekeScript();
-
-    // Get product data from Webflow (adjust selectors based on your Webflow setup)
+    // Get product data from Webflow first (before loading script)
     const productId = getProductIdFromPage();
     const variantId = getVariantIdFromPage();
 
     if (!productId) {
-      console.warn('Product ID not found on page');
+      console.warn('Product ID not found on page. Make sure you have data-zakeke-product-id attribute.');
       return;
     }
+
+    console.log('Zakeke: Product ID found:', productId);
+    
+    // Wait for Zakeke script to load
+    console.log('Zakeke: Loading customizer script from:', ZAKEKE_CONFIG.customizerUrl);
+    await loadZakekeScript();
+    console.log('Zakeke: Customizer script loaded successfully');
 
     // Initialize customizer
     const customizer = initZakekeCustomizer(productId, variantId);
@@ -43,9 +58,16 @@ async function initZakekeOnProductPage() {
     // Add customizer button/trigger
     setupCustomizerButton(customizer, productId, variantId);
 
+    console.log('Zakeke: Initialization complete');
     return customizer;
   } catch (error) {
     console.error('Error initializing Zakeke:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      type: error.type,
+      target: error.target
+    });
   }
 }
 
