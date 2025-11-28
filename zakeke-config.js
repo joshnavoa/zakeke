@@ -22,7 +22,11 @@ const ZAKEKE_CONFIG = {
   tenantId: '320250',
   apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
   apiUrl: 'https://api.zakeke.com',
-  customizerUrl: 'https://customizer.zakeke.com'
+  customizerUrl: 'https://customizer.zakeke.com', // Legacy, may not work
+  // Store customizer URL - configure this in Zakeke dashboard
+  // Format: https://your-store.com/customizer.html
+  // If not set, will use current page origin + /customizer.html
+  storeCustomizerUrl: null // Set this if you have a custom customizer URL configured
 };
 
 // Store for cart items

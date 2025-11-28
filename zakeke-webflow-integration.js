@@ -142,12 +142,27 @@ function openCustomizerIframe(productId, variantId) {
   document.body.appendChild(modal);
 
   // Build Zakeke customizer iframe URL
-  // Format: https://customizer.zakeke.com/?tenantId=XXX&productId=YYY&variantId=ZZZ
-  const iframeUrl = new URL(`${ZAKEKE_CONFIG.customizerUrl}/`);
-  iframeUrl.searchParams.set('tenantId', ZAKEKE_CONFIG.tenantId);
-  iframeUrl.searchParams.set('productId', productId);
+  // Based on Zakeke Cart API documentation, the customizer URL format should be:
+  // https://your-store.com/customizer.html?productid=XXX&quantity=1
+  // OR use the Zakeke API to get the customizer URL
+  // For now, we'll try using the store's domain (current page origin) + /customizer.html
+  // If that doesn't work, you may need to configure the customizer URL in Zakeke dashboard
+  
+  // Option 1: Use your store's customizer URL (if configured in Zakeke)
+  const storeOrigin = window.location.origin;
+  let customizerBaseUrl = `${storeOrigin}/customizer.html`;
+  
+  // Option 2: If customizer URL is configured in Zakeke config, use that
+  if (ZAKEKE_CONFIG.storeCustomizerUrl) {
+    customizerBaseUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+  }
+  
+  // Build URL with parameters (lowercase as per Cart API docs)
+  const iframeUrl = new URL(customizerBaseUrl);
+  iframeUrl.searchParams.set('productid', productId);
+  iframeUrl.searchParams.set('quantity', '1');
   if (variantId) {
-    iframeUrl.searchParams.set('variantId', variantId);
+    iframeUrl.searchParams.set('variantid', variantId);
   }
   
   console.log('Zakeke: Customizer iframe URL:', iframeUrl.toString());
