@@ -28,6 +28,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Log all requests for debugging
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  console.log(`  Query:`, req.query);
+  console.log(`  Headers:`, {
+    'user-agent': req.headers['user-agent'],
+    'authorization': req.headers['authorization'] ? 'Present' : 'Missing'
+  });
+  next();
+});
+
 // Your Zakeke credentials (for authentication)
 const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID || '320250';
 const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY || '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.';
