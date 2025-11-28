@@ -424,6 +424,61 @@ function showCartNotification(message, type = 'success') {
   }, 3000);
 }
 
+// Show cart notification
+function showCartNotification(message, type = 'success') {
+  // Remove existing notification if any
+  const existing = document.querySelector('.zakeke-cart-notification');
+  if (existing) {
+    existing.remove();
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `zakeke-cart-notification zakeke-cart-notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  // Add animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  `;
+  if (!document.querySelector('#zakeke-notification-styles')) {
+    style.id = 'zakeke-notification-styles';
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
 // Initialize checkout integration
 function initCheckoutIntegration() {
   // Hook into Webflow checkout form submission
