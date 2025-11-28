@@ -2,6 +2,17 @@
 // This server implements the Product Catalog API that Zakeke calls
 // to retrieve your products and manage customization settings
 
+// Error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 require('dotenv').config();
 const express = require('express');
 const basicAuth = require('express-basic-auth');
@@ -289,14 +300,29 @@ app.get('/health', (req, res) => {
 
 // Railway automatically sets PORT, fallback to 3000 for local development
 const PORT = process.env.PORT || 3000;
+
+// Verify required environment variables
+if (!process.env.ZAKEKE_TENANT_ID || !process.env.ZAKEKE_API_KEY) {
+  console.error('ERROR: Missing required environment variables!');
+  console.error('Required: ZAKEKE_TENANT_ID, ZAKEKE_API_KEY');
+  console.error('Current values:');
+  console.error('  ZAKEKE_TENANT_ID:', process.env.ZAKEKE_TENANT_ID ? 'SET' : 'MISSING');
+  console.error('  ZAKEKE_API_KEY:', process.env.ZAKEKE_API_KEY ? 'SET' : 'MISSING');
+  process.exit(1);
+}
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Zakeke Product Catalog API running on port ${PORT}`);
-  if (process.env.RAILWAY_ENVIRONMENT) {
-    console.log(`Deployed on Railway`);
-  } else {
-    console.log(`Local development - Base URL: http://localhost:${PORT}/`);
+  console.log(`✅ Zakeke Product Catalog API running on port ${PORT}`);
+  console.log(`✅ Environment: ${process.env.RAILWAY_ENVIRONMENT ? 'Railway' : 'Local'}`);
+  console.log(`✅ Tenant ID: ${process.env.ZAKEKE_TENANT_ID}`);
+  console.log(`✅ API Key: ${process.env.ZAKEKE_API_KEY ? 'SET' : 'MISSING'}`);
+  if (!process.env.RAILWAY_ENVIRONMENT) {
+    console.log(`📍 Local URL: http://localhost:${PORT}/`);
   }
-  console.log(`Configure this URL in Zakeke back office: Sales Channels > Product Catalog API`);
+  console.log(`📋 Configure this URL in Zakeke back office: Sales Channels > Product Catalog API`);
+}).on('error', (error) => {
+  console.error('❌ Server error:', error);
+  process.exit(1);
 });
 
 module.exports = app;
