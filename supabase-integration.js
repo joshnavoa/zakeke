@@ -282,13 +282,18 @@ function transformSupabaseProduct(supabaseProduct) {
   }
 
   // Try to find image
-  const image = supabaseProduct.image || 
-                supabaseProduct.image_url || 
-                supabaseProduct.main_image ||
-                supabaseProduct.photo ||
-                supabaseProduct.thumbnail ||
-                supabaseProduct.images?.[0] ||
-                '';
+  let image = supabaseProduct.image || 
+              supabaseProduct.image_url || 
+              supabaseProduct.main_image ||
+              supabaseProduct.photo ||
+              supabaseProduct.thumbnail ||
+              supabaseProduct.images?.[0] ||
+              '';
+  
+  // Clean up image URL (remove trailing whitespace/newlines)
+  if (image) {
+    image = image.trim().replace(/\r\n/g, '').replace(/\n/g, '');
+  }
 
   // Try to find SKU
   const sku = supabaseProduct.sku || 
