@@ -53,6 +53,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'Zakeke Product Catalog API' });
 });
 
+// Root endpoint - some integrations check this first
+app.get('/', (req, res) => {
+  console.log('📦 GET / (root) called');
+  console.log('   User-Agent:', req.headers['user-agent']);
+  res.json({ 
+    status: 'ok', 
+    service: 'Zakeke Product Catalog API',
+    endpoints: {
+      products: '/products',
+      search: '/products/search',
+      health: '/health'
+    }
+  });
+});
+
 // Schema inspection endpoint (for debugging - requires auth)
 app.get('/schema', async (req, res) => {
   try {
