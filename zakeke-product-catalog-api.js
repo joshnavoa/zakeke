@@ -153,8 +153,10 @@ app.use(authMiddleware);
 app.get('/products', async (req, res) => {
   try {
     console.log('📦 GET /products called');
-    console.log('   Query params:', req.query);
-    console.log('   User-Agent:', req.headers['user-agent']);
+    console.log('   Query params:', JSON.stringify(req.query));
+    console.log('   User-Agent:', req.headers['user-agent'] || 'undefined');
+    console.log('   Authorization:', req.headers['authorization'] ? 'Present' : 'Missing');
+    console.log('   All headers:', JSON.stringify(req.headers, null, 2));
     
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -173,7 +175,6 @@ app.get('/products', async (req, res) => {
     // By default, mark all products as customizable (Zakeke might only show customizable products)
     products.forEach(product => {
       // Always set to true - Zakeke might filter out non-customizable products
-      // If a product was explicitly unmarked, it won't be in the set, so this will still be true
       product.customizable = true;
     });
 
@@ -185,6 +186,7 @@ app.get('/products', async (req, res) => {
 
     console.log('   User-Agent contains "zakeke":', userAgent.toLowerCase().includes('zakeke'));
     console.log('   Accept header:', acceptHeader);
+    console.log('   Request might be from Zakeke (no User-Agent):', !req.headers['user-agent']);
 
     // Standard format with products and pagination (Zakeke expects this format)
     const response = {
