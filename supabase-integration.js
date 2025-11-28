@@ -309,12 +309,14 @@ function transformSupabaseProduct(supabaseProduct) {
                 null;
 
   return {
-    id: String(id), // Zakeke expects string IDs
+    code: String(id), // Zakeke requires 'code' field (not 'id')
+    id: String(id), // Keep id for backward compatibility
     name: name,
     description: description,
     price: price,
     currency: supabaseProduct.currency || 'USD',
-    image: image,
+    thumbnail: image, // Zakeke requires 'thumbnail' field (not 'image')
+    image: image, // Keep image for backward compatibility
     sku: sku,
     stock: stock,
     // Add other fields as needed
