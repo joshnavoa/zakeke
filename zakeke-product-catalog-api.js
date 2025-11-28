@@ -29,8 +29,16 @@ app.use(cors());
 app.use(express.json());
 
 // Your Zakeke credentials (for authentication)
-const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID || '323181';
-const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY || 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.';
+// These MUST be set in environment variables
+const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID;
+const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY;
+
+if (!ZAKEKE_CLIENT_ID || !ZAKEKE_SECRET_KEY) {
+  console.error('❌ ERROR: ZAKEKE_TENANT_ID and ZAKEKE_API_KEY must be set in environment variables');
+  console.error('   Set ZAKEKE_TENANT_ID in .env or Railway environment variables');
+  console.error('   Set ZAKEKE_API_KEY in .env or Railway environment variables');
+  process.exit(1);
+}
 
 // Zakeke API configuration (products are in Zakeke)
 const ZAKEKE_API_URL = process.env.ZAKEKE_API_URL || 'https://api.zakeke.com';
@@ -449,21 +457,11 @@ async function fetchZakekeProduct(productId) {
 // Railway automatically sets PORT, fallback to 3000 for local development
 const PORT = process.env.PORT || 3000;
 
-// Verify required environment variables
-if (!process.env.ZAKEKE_TENANT_ID || !process.env.ZAKEKE_API_KEY) {
-  console.error('ERROR: Missing required environment variables!');
-  console.error('Required: ZAKEKE_TENANT_ID, ZAKEKE_API_KEY');
-  console.error('Current values:');
-  console.error('  ZAKEKE_TENANT_ID:', process.env.ZAKEKE_TENANT_ID ? 'SET' : 'MISSING');
-  console.error('  ZAKEKE_API_KEY:', process.env.ZAKEKE_API_KEY ? 'SET' : 'MISSING');
-  process.exit(1);
-}
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Zakeke Product Catalog API running on port ${PORT}`);
   console.log(`✅ Environment: ${process.env.RAILWAY_ENVIRONMENT ? 'Railway' : 'Local'}`);
-  console.log(`✅ Tenant ID: ${process.env.ZAKEKE_TENANT_ID}`);
-  console.log(`✅ API Key: ${process.env.ZAKEKE_API_KEY ? 'SET' : 'MISSING'}`);
+  console.log(`✅ Tenant ID: ${ZAKEKE_CLIENT_ID}`);
+  console.log(`✅ API Key: SET`);
   if (!process.env.RAILWAY_ENVIRONMENT) {
     console.log(`📍 Local URL: http://localhost:${PORT}/`);
   }

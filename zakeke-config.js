@@ -1,7 +1,13 @@
 // Zakeke Configuration
 // 
 // ⚠️ SET YOUR CREDENTIALS HERE ⚠️
-// Replace 'YOUR_CLIENT_ID' and 'YOUR_SECRET_KEY' with your actual values
+// 
+// NOTE: This is CLIENT-SIDE code (runs in browser), so it cannot use .env directly.
+// For client-side, credentials must be set here. They will be visible in browser source.
+// This is normal for client-side integrations - the API key is public.
+//
+// For SERVER-SIDE code (zakeke-product-catalog-api.js), credentials are pulled from .env
+// and environment variables - no hardcoded values.
 //
 // To get your credentials:
 // 1. Log in to Zakeke back-office
@@ -10,13 +16,13 @@
 //
 // See HOW-TO-GET-CREDENTIALS.md and CREDENTIALS-SETUP.md for detailed instructions
 //
-// NOTE: For Webflow, you set credentials directly here (no .env file needed)
-// The API key will be visible in browser source - this is normal for client-side integrations
+// TODO: Set these values from your .env or environment
+// For production, consider serving this config from your server API
 const ZAKEKE_CONFIG = {
-  tenantId: '323181',
-  apiKey: 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.',
-  apiUrl: 'https://api.zakeke.com', // or your custom domain
-  customizerUrl: 'https://customizer.zakeke.com' // or your custom domain
+  tenantId: process.env.ZAKEKE_TENANT_ID || '323181', // Will use env if available (e.g., in build process)
+  apiKey: process.env.ZAKEKE_API_KEY || 'FR_4LpxtFD6JmGMnv8mDMAUIOfZWeLA0S9GW9slLlOo.', // Will use env if available
+  apiUrl: process.env.ZAKEKE_API_URL || 'https://api.zakeke.com',
+  customizerUrl: process.env.ZAKEKE_CUSTOMIZER_URL || 'https://customizer.zakeke.com'
 };
 
 // Store for cart items
