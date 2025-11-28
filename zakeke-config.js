@@ -16,13 +16,13 @@
 //
 // See HOW-TO-GET-CREDENTIALS.md and CREDENTIALS-SETUP.md for detailed instructions
 //
-// TODO: Set these values from your .env or environment
-// For production, consider serving this config from your server API
+// Browser-side configuration (process.env is not available in browser)
+// These values are public and will be visible in browser source code (this is normal for client-side API keys)
 const ZAKEKE_CONFIG = {
-  tenantId: process.env.ZAKEKE_TENANT_ID || '320250', // Will use env if available (e.g., in build process)
-  apiKey: process.env.ZAKEKE_API_KEY || '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.', // Will use env if available
-  apiUrl: process.env.ZAKEKE_API_URL || 'https://api.zakeke.com',
-  customizerUrl: process.env.ZAKEKE_CUSTOMIZER_URL || 'https://customizer.zakeke.com'
+  tenantId: '320250',
+  apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
+  apiUrl: 'https://api.zakeke.com',
+  customizerUrl: 'https://customizer.zakeke.com'
 };
 
 // Store for cart items
