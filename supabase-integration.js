@@ -52,6 +52,7 @@ async function fetchSupabaseProducts(page = 1, limit = 20, sort = 'created_at', 
 
     if (error) {
       console.error('Supabase error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       throw error;
     }
 
@@ -70,6 +71,8 @@ async function fetchSupabaseProducts(page = 1, limit = 20, sort = 'created_at', 
     };
   } catch (error) {
     console.error('Error fetching products from Supabase:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return {
       items: [],
       products: [],
