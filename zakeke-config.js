@@ -23,10 +23,10 @@ const ZAKEKE_CONFIG = {
   apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
   apiUrl: 'https://api.zakeke.com',
   customizerUrl: 'https://customizer.zakeke.com', // Legacy, may not work
-  // Store customizer URL - configure this in Zakeke dashboard
-  // Format: https://your-store.com/customizer.html
-  // If not set, will use current page origin + /customizer.html
-  storeCustomizerUrl: null // Set this if you have a custom customizer URL configured
+  // Store customizer URL - your Webflow domain
+  // Based on Zakeke Cart API, format should be: https://your-store.com/customizer.html
+  // If you have a custom customizer page in Webflow, update this URL
+  storeCustomizerUrl: 'https://www.urnory.com/customizer.html' // Your Webflow domain
 };
 
 // Store for cart items

@@ -146,30 +146,28 @@ async function openCustomizerIframe(productId, variantId) {
   let customizerUrl = null;
   
   try {
-    // Option 1: Try to get customizer URL from Cart API
-    const cartApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/cart/customizer-url`;
-    const response = await fetch(cartApiUrl, {
-      method: 'POST',
+    // Option 1: Try to get customizer URL from Zakeke API
+    // Check if there's a customizer endpoint that returns the URL
+    // This might vary based on your Zakeke configuration
+    const productApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/products/${productId}`;
+    const productResponse = await fetch(productApiUrl, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        productId: productId,
-        variantId: variantId,
-        quantity: 1
-      })
+      }
     });
     
-    if (response.ok) {
-      const data = await response.json();
-      if (data.customizerUrl) {
-        customizerUrl = data.customizerUrl;
-        console.log('Zakeke: Got customizer URL from Cart API:', customizerUrl);
+    if (productResponse.ok) {
+      const productData = await productResponse.json();
+      // Some Zakeke configurations return customizerUrl in product data
+      if (productData.customizerUrl) {
+        customizerUrl = productData.customizerUrl;
+        console.log('Zakeke: Got customizer URL from product API:', customizerUrl);
       }
     }
   } catch (error) {
-    console.warn('Zakeke: Could not get customizer URL from Cart API:', error);
+    console.warn('Zakeke: Could not get customizer URL from API:', error);
   }
   
   // Option 2: Use configured store customizer URL
