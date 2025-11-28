@@ -17,6 +17,12 @@ require('dotenv').config();
 const express = require('express');
 const basicAuth = require('express-basic-auth');
 const cors = require('cors');
+const {
+  fetchSupabaseProducts,
+  searchSupabaseProducts,
+  fetchSupabaseProduct,
+  fetchSupabaseProductVariants
+} = require('./supabase-integration');
 const app = express();
 
 app.use(cors());
@@ -62,11 +68,11 @@ app.get('/products', async (req, res) => {
     const sort = req.query.sort || 'createdOn';
     const order = req.query.order || 'ASC';
 
-    // Fetch products from Zakeke API
-    const zakekeProducts = await fetchZakekeProducts(page, limit, sort, order);
+    // Fetch products from Supabase
+    const supabaseProducts = await fetchSupabaseProducts(page, limit, sort, order);
 
     // Products are already in Zakeke format, just add customizable flag
-    const products = zakekeProducts.items || zakekeProducts.products || [];
+    const products = supabaseProducts.items || supabaseProducts.products || [];
 
     // Add customizable flag
     products.forEach(product => {
@@ -78,8 +84,8 @@ app.get('/products', async (req, res) => {
       pagination: {
         page: page,
         limit: limit,
-        total: zakekeProducts.pagination?.total || zakekeProducts.total || products.length,
-        totalPages: Math.ceil((zakekeProducts.pagination?.total || zakekeProducts.total || products.length) / limit)
+        total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
+        totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
       }
     });
   } catch (error) {
@@ -99,20 +105,10 @@ app.get('/products/search', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
 
-    // Fetch products from Zakeke API and filter by search query
-    const zakekeProducts = await fetchZakekeProducts(page, limit);
+    // Search products in Supabase
+    const supabaseProducts = await searchSupabaseProducts(query, page, limit);
     
-    // Filter by search query (name, description, etc.)
-    let allProducts = zakekeProducts.items || zakekeProducts.products || [];
-    if (query) {
-      const lowerQuery = query.toLowerCase();
-      allProducts = allProducts.filter(product => 
-        product.name?.toLowerCase().includes(lowerQuery) ||
-        product.description?.toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    const products = allProducts;
+    const products = supabaseProducts.items || supabaseProducts.products || [];
     products.forEach(product => {
       product.customizable = customizableProducts.has(product.id);
     });
@@ -122,8 +118,8 @@ app.get('/products/search', async (req, res) => {
       pagination: {
         page: page,
         limit: limit,
-        total: allProducts.length,
-        totalPages: Math.ceil(allProducts.length / limit)
+        total: supabaseProducts.pagination?.total || 0,
+        totalPages: Math.ceil((supabaseProducts.pagination?.total || 0) / limit)
       }
     });
   } catch (error) {
@@ -140,15 +136,15 @@ app.get('/products/:productId/options', async (req, res) => {
   try {
     const productId = req.params.productId;
 
-    // Fetch product from Zakeke API
-    const zakekeProduct = await fetchZakekeProduct(productId);
+    // Fetch product from Supabase
+    const supabaseProduct = await fetchSupabaseProduct(productId);
 
-    if (!zakekeProduct) {
+    if (!supabaseProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Get variants/options from Zakeke product
-    const options = zakekeProduct.variants || zakekeProduct.options || [];
+    // Get variants/options from Supabase
+    const options = await fetchSupabaseProductVariants(productId);
 
     res.json({
       productId: productId,
