@@ -371,14 +371,21 @@ app.get('/products/:productId/options', async (req, res) => {
     }
 
     // Get variants/options from Supabase
-    const variants = await fetchSupabaseProductVariants(productId);
-    console.log(`   Found ${variants.length} variants for product ${productId}`);
+    let variants = [];
+    try {
+      variants = await fetchSupabaseProductVariants(productId);
+      console.log(`   Found ${variants.length} variants for product ${productId}`);
+    } catch (error) {
+      console.log(`   Error fetching variants (using default structure):`, error.message);
+      // Continue with empty variants - will use default structure
+      variants = [];
+    }
 
     // Transform variants to Zakeke options format
     // Zakeke expects: [{code, name, values: [{code, name, metadata: {}}], metadata: {}}]
     // If no variants, return a default option structure (Zakeke might expect at least one option)
     let options;
-    if (variants.length > 0) {
+    if (variants && variants.length > 0) {
       options = variants.map(variant => {
         const optionValues = variant.values || [{
           code: variant.code || variant.id || String(variant.id),
@@ -403,6 +410,7 @@ app.get('/products/:productId/options', async (req, res) => {
     } else {
       // No variants - return default option structure to prevent Zakeke errors
       // Zakeke might expect at least one option group even for products without variants
+      console.log(`   No variants found - returning default option structure`);
       options = [{
         code: 'default',
         name: 'Default',
@@ -415,9 +423,22 @@ app.get('/products/:productId/options', async (req, res) => {
       }];
     }
 
-    // Always return an array, even if empty
-    // Zakeke expects: [] not null or undefined
+    // Always return an array with at least one option
+    // Zakeke expects: [{code, name, values: [...], metadata: {}}] not []
     console.log(`   Returning ${options.length} options`);
+    if (options.length === 0) {
+      console.log(`   ⚠️  WARNING: Options array is empty - creating default structure`);
+      options = [{
+        code: 'default',
+        name: 'Default',
+        values: [{
+          code: productId,
+          name: supabaseProduct.name || 'Default',
+          metadata: {}
+        }],
+        metadata: {}
+      }];
+    }
     
     res.json(options);
   } catch (error) {
