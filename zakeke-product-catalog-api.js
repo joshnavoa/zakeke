@@ -28,18 +28,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Log all requests for debugging
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
-  console.log(`  Query:`, req.query);
-  console.log(`  Headers:`, {
-    'user-agent': req.headers['user-agent'],
-    'authorization': req.headers['authorization'] ? 'Present' : 'Missing'
-  });
-  next();
-});
-
 // Your Zakeke credentials (for authentication)
 const ZAKEKE_CLIENT_ID = process.env.ZAKEKE_TENANT_ID || '320250';
 const ZAKEKE_SECRET_KEY = process.env.ZAKEKE_API_KEY || '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.';
@@ -149,6 +137,10 @@ app.use(authMiddleware);
  */
 app.get('/products', async (req, res) => {
   try {
+    console.log('📦 GET /products called');
+    console.log('   Query params:', req.query);
+    console.log('   User-Agent:', req.headers['user-agent']);
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const sort = req.query.sort || 'created_at'; // Use created_at instead of createdOn
@@ -160,12 +152,14 @@ app.get('/products', async (req, res) => {
     // Products are already in Zakeke format, just add customizable flag
     const products = supabaseProducts.items || supabaseProducts.products || [];
 
+    console.log(`   Found ${products.length} products from Supabase`);
+
     // Add customizable flag
     products.forEach(product => {
       product.customizable = customizableProducts.has(product.id);
     });
 
-    res.json({
+    const response = {
       products: products,
       pagination: {
         page: page,
@@ -173,7 +167,18 @@ app.get('/products', async (req, res) => {
         total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
         totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
       }
-    });
+    };
+
+    console.log(`   Returning ${products.length} products`);
+    if (products.length > 0) {
+      console.log('   Sample product:', {
+        code: products[0].code,
+        name: products[0].name,
+        hasThumbnail: !!products[0].thumbnail
+      });
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching products:', error);
     console.error('Error stack:', error.stack);
