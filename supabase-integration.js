@@ -207,11 +207,31 @@ async function fetchSupabaseProductVariants(productId) {
   }
 
   try {
-    // Adjust table name based on your schema (could be 'variants', 'product_variants', etc.)
-    const { data, error } = await supabase
-      .from('product_variants') // or 'variants'
-      .select('*')
-      .eq('product_id', productId);
+    // Try different possible table names
+    const possibleTables = ['product_variants', 'variants', 'product_variant'];
+    let data = null;
+    let error = null;
+
+    for (const tableName of possibleTables) {
+      const result = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('product_id', productId);
+      
+      if (!result.error) {
+        data = result.data;
+        break;
+      }
+      error = result.error;
+    }
+
+    // If table doesn't exist or no variants found, return empty array
+    // The options endpoint will handle creating default structure
+    if (error && error.code === '42P01') {
+      // Table doesn't exist - this is OK, return empty array
+      console.log(`   Variants table not found (this is OK if products don't have variants)`);
+      return [];
+    }
 
     if (error) {
       console.error('Error fetching variants:', error);
@@ -236,6 +256,7 @@ async function fetchSupabaseProductVariants(productId) {
     }));
   } catch (error) {
     console.error('Error fetching product variants:', error);
+    // Return empty array - options endpoint will create default structure
     return [];
   }
 }
