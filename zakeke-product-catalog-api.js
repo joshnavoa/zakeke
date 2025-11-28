@@ -111,17 +111,10 @@ app.get('/', async (req, res) => {
         product.customizable = true;
       });
 
-      const response = {
-        products: products,
-        pagination: {
-          page: page,
-          limit: limit,
-          total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
-          totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
-        }
-      };
-      
-      console.log(`   Returning ${products.length} products from root endpoint`);
+      // Zakeke expects a simple array of products (not wrapped in object)
+      // According to docs: https://docs.zakeke.com/docs/API/Integration/Connecting-Product/Products_Catalog_API
+      // Response should be: [{code, name, thumbnail}, ...]
+      console.log(`   Returning ${products.length} products from root endpoint (as array)`);
       if (products.length > 0) {
         console.log('   Sample product:', {
           code: products[0].code,
@@ -131,7 +124,8 @@ app.get('/', async (req, res) => {
         });
       }
 
-      return res.json(response);
+      // Return simple array (Zakeke format)
+      return res.json(products);
     } catch (error) {
       console.error('Error fetching products from root:', error);
       return res.status(500).json({ 
