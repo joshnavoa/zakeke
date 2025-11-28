@@ -143,20 +143,24 @@ async function openCustomizerIframe(productId, variantId) {
   
   const container = modal.querySelector('.zakeke-customizer-container');
   
-  // Get product info first (needed for customizer initialization)
+  // Get product info (optional - use fallback if API fails)
+  // Note: The productId might be from Supabase, not Zakeke, so API call may fail
   let productInfo = null;
   try {
     productInfo = await getProductInfo(productId, variantId);
-    console.log('Zakeke: Product info loaded:', productInfo);
+    console.log('Zakeke: Product info loaded from API:', productInfo);
   } catch (error) {
-    console.error('Zakeke: Failed to load product info:', error);
-    container.innerHTML = `
-      <div style="padding: 20px; text-align: center;">
-        <p><strong>Failed to load product information</strong></p>
-        <p>Error: ${error.message}</p>
-      </div>
-    `;
-    return;
+    console.warn('Zakeke: Could not load product info from API (this is OK if using Product Catalog API):', error.message);
+    // Use fallback product info - the customizer will get product data from Product Catalog API
+    productInfo = {
+      id: productId,
+      name: 'Product',
+      price: 0,
+      currency: 'USD',
+      image: null,
+      variants: []
+    };
+    console.log('Zakeke: Using fallback product info');
   }
   
   // Get customizer URL from Zakeke API
