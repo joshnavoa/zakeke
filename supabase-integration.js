@@ -220,10 +220,18 @@ async function fetchSupabaseProductVariants(productId) {
 
     return (data || []).map(variant => ({
       id: variant.id,
+      code: variant.code || variant.id || String(variant.id),
       name: variant.name || variant.title || 'Default',
       price: parseFloat(variant.price || 0),
       sku: variant.sku || '',
       stock: variant.stock || variant.inventory || null,
+      // For Zakeke options format: values array
+      values: variant.values || [{
+        code: variant.code || variant.id || String(variant.id),
+        name: variant.name || variant.title || 'Default'
+      }],
+      // Add metadata to prevent undefined errors
+      metadata: variant.metadata || {},
       // Add other variant fields as needed
     }));
   } catch (error) {
