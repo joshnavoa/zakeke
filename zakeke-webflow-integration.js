@@ -163,10 +163,25 @@ async function openCustomizerIframe(productId, variantId) {
     console.log('Zakeke: Using fallback product info');
   }
   
-  // Get customizer URL from Zakeke API
+  // Use your customizer page first (not Zakeke's URL which redirects to WordPress)
+  // Priority: Your customizer page > Configurator API > Fallback
   let customizerUrl = null;
+  
+  // Option 1: Use configured store customizer URL (your /customizer page) - PRIORITY
+  if (ZAKEKE_CONFIG.storeCustomizerUrl) {
+    customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+    console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
+  } else {
+    // Build from current origin
+    const storeOrigin = window.location.origin;
+    customizerUrl = `${storeOrigin}/customizer`;
+    console.log('Zakeke: Using fallback customizer URL from origin:', customizerUrl);
+  }
+  
+  // Note: We're NOT using Zakeke's Configurator API URL because it redirects to WordPress
+  // If you need to use Zakeke's API URL in the future, uncomment below and check the URL format
+  /*
   try {
-    // Try to get customizer URL from Configurator API
     const configuratorApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/configurator/url`;
     const configuratorResponse = await fetch(configuratorApiUrl, {
       method: 'POST',
@@ -183,7 +198,7 @@ async function openCustomizerIframe(productId, variantId) {
     
     if (configuratorResponse.ok) {
       const configuratorData = await configuratorResponse.json();
-      if (configuratorData.url) {
+      if (configuratorData.url && !configuratorData.url.includes('wordpress')) {
         customizerUrl = configuratorData.url;
         console.log('Zakeke: Got customizer URL from Configurator API:', customizerUrl);
       }
@@ -191,20 +206,7 @@ async function openCustomizerIframe(productId, variantId) {
   } catch (error) {
     console.warn('Zakeke: Could not get customizer URL from API:', error);
   }
-  
-  // Fallback: Use your customizer page (not Zakeke's URL which redirects to WordPress)
-  if (!customizerUrl) {
-    // Use configured store customizer URL (your /customizer page)
-    if (ZAKEKE_CONFIG.storeCustomizerUrl) {
-      customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
-      console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
-    } else {
-      // Build from current origin
-      const storeOrigin = window.location.origin;
-      customizerUrl = `${storeOrigin}/customizer`;
-      console.log('Zakeke: Using fallback customizer URL from origin:', customizerUrl);
-    }
-  }
+  */
   
   // Build URL with product parameters for your customizer page
   const iframeUrl = new URL(customizerUrl);
