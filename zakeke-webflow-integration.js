@@ -352,6 +352,10 @@ function createCustomizerModal() {
   const overlay = modal.querySelector('.zakeke-modal-overlay');
   
   const closeModal = () => {
+    // Remove message handler if it exists
+    if (modal._zakekeMessageHandler) {
+      window.removeEventListener('message', modal._zakekeMessageHandler);
+    }
     modal.remove();
   };
 
