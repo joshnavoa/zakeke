@@ -192,24 +192,34 @@ async function openCustomizerIframe(productId, variantId) {
     console.warn('Zakeke: Could not get customizer URL from API:', error);
   }
   
-  // Fallback: Build Zakeke customizer URL
+  // Fallback: Use your customizer page (not Zakeke's URL which redirects to WordPress)
   if (!customizerUrl) {
-    // Use Zakeke's customizer domain - format may vary by account
-    // Try different URL formats
-    const possibleUrls = [
-      `https://customizer.zakeke.com/?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}`,
-      `https://${ZAKEKE_CONFIG.tenantId}.customizer.zakeke.com/?productid=${productId}`,
-      `https://customizer.zakeke.com/configurator?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}`
-    ];
-    
-    customizerUrl = possibleUrls[0]; // Start with first option
-    console.log('Zakeke: Using fallback customizer URL:', customizerUrl);
+    // Use configured store customizer URL (your /customizer page)
+    if (ZAKEKE_CONFIG.storeCustomizerUrl) {
+      customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+      console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
+    } else {
+      // Build from current origin
+      const storeOrigin = window.location.origin;
+      customizerUrl = `${storeOrigin}/customizer`;
+      console.log('Zakeke: Using fallback customizer URL from origin:', customizerUrl);
+    }
   }
+  
+  // Build URL with product parameters for your customizer page
+  const iframeUrl = new URL(customizerUrl);
+  iframeUrl.searchParams.set('productid', productId);
+  iframeUrl.searchParams.set('quantity', '1');
+  if (variantId) {
+    iframeUrl.searchParams.set('variantid', variantId);
+  }
+  
+  console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
   
   // Create iframe for Zakeke customizer
   const iframe = document.createElement('iframe');
   iframe.id = 'zakeke-customizer-iframe';
-  iframe.src = customizerUrl;
+  iframe.src = iframeUrl.toString();
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = 'none';
