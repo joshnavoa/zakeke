@@ -67,10 +67,18 @@ Copy and paste this entire code block into the **Footer Code** section:
       tenantId: ZAKEKE_CONFIG.tenantId
     })
   })
-  .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-  .then(data => {
-    let url = (data.url && !data.url.includes('wordpress')) ? data.url : 
-              `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}${variantId ? '&variantid=' + variantId : ''}`;
+    .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    .then(data => {
+      let url = null;
+      if (data.url && !data.url.includes('wordpress')) {
+        url = data.url;
+      } else {
+        // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
+        url = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
+        if (productId) url += `&productid=${productId}`;
+        if (quantity) url += `&quantity=${quantity}`;
+        if (variantId) url += `&variantid=${variantId}`;
+      }
     
     const iframe = document.createElement('iframe');
     iframe.src = url;
@@ -82,7 +90,11 @@ Copy and paste this entire code block into the **Footer Code** section:
   })
   .catch(err => {
     console.error('Zakeke Customizer: Error:', err);
-    const url = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}${variantId ? '&variantid=' + variantId : ''}`;
+    // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
+    let url = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
+    if (productId) url += `&productid=${productId}`;
+    if (quantity) url += `&quantity=${quantity}`;
+    if (variantId) url += `&variantid=${variantId}`;
     const iframe = document.createElement('iframe');
     iframe.src = url;
     iframe.style.cssText = 'width:100%;height:100%;border:none';

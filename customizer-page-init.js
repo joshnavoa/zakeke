@@ -80,9 +80,14 @@
         console.log('Zakeke Customizer: Using URL from Configurator API:', customizerUrl);
       } else {
         // Fallback: Use Zakeke's portal customizer
-        // Based on Zakeke documentation, the format should be:
-        // https://portal.zakeke.com/customizer?tenant=XXX&productid=XXX
-        customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}`;
+        // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
+        customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
+        if (productId) {
+          customizerUrl += `&productid=${productId}`;
+        }
+        if (quantity) {
+          customizerUrl += `&quantity=${quantity}`;
+        }
         if (variantId) {
           customizerUrl += `&variantid=${variantId}`;
         }
@@ -127,7 +132,17 @@
       console.error('Zakeke Customizer: Error getting customizer URL:', error);
       
       // Fallback: Use portal customizer directly
-      const customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}&quantity=${quantity}` + (variantId ? `&variantid=${variantId}` : '');
+      // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
+      let customizerUrl = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
+      if (productId) {
+        customizerUrl += `&productid=${productId}`;
+      }
+      if (quantity) {
+        customizerUrl += `&quantity=${quantity}`;
+      }
+      if (variantId) {
+        customizerUrl += `&variantid=${variantId}`;
+      }
       
       const iframe = document.createElement('iframe');
       iframe.id = 'zakeke-customizer-iframe';
