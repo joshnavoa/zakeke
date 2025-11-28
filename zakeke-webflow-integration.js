@@ -247,7 +247,8 @@ if (document.readyState === 'loading') {
 if (typeof window !== 'undefined') {
   window.ZakekeWebflow = {
     init: initZakekeOnProductPage,
-    openCustomizer: openCustomizer
+    openCustomizer: openCustomizer,
+    openCustomizerIframe: openCustomizerIframe
   };
 }
 
