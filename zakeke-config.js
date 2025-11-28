@@ -24,10 +24,10 @@ const ZAKEKE_CONFIG = {
   apiUrl: 'https://api.zakeke.com',
   customizerUrl: 'https://customizer.zakeke.com', // Legacy, may not work
   // Store customizer URL - your Webflow domain
-  // Based on Zakeke Cart API, format should be: https://your-store.com/customizer.html
-  // Using staging URL for testing: https://pss-5215cc.webflow.io/
-  // For production, change to: https://www.urnory.com/customizer.html
-  storeCustomizerUrl: 'https://pss-5215cc.webflow.io/customizer.html' // Staging Webflow domain
+  // Based on Zakeke Cart API, format should be: https://your-store.com/customizer
+  // Using staging URL for testing: https://pss-5215cc.webflow.io/customizer
+  // For production, change to: https://www.urnory.com/customizer
+  storeCustomizerUrl: 'https://pss-5215cc.webflow.io/customizer' // Staging Webflow customizer page
 };
 
 // Store for cart items

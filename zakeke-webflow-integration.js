@@ -179,7 +179,7 @@ async function openCustomizerIframe(productId, variantId) {
   // Option 3: Build URL from store origin (fallback)
   if (!customizerUrl) {
     const storeOrigin = window.location.origin;
-    customizerUrl = `${storeOrigin}/customizer.html`;
+    customizerUrl = `${storeOrigin}/customizer`;
     console.log('Zakeke: Using fallback customizer URL:', customizerUrl);
   }
   
