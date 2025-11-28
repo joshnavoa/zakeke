@@ -25,6 +25,20 @@ if (SUPABASE_URL && SUPABASE_KEY) {
  * @returns {Promise<Object>} Products with pagination
  */
 async function fetchSupabaseProducts(page = 1, limit = 20, sort = 'created_at', order = 'DESC') {
+  // Map common sort field names to actual column names
+  const sortFieldMap = {
+    'createdOn': 'created_at',
+    'created_at': 'created_at',
+    'createdAt': 'created_at',
+    'name': 'name',
+    'title': 'name',
+    'price': 'price',
+    'updated_at': 'updated_at',
+    'updatedAt': 'updated_at'
+  };
+  
+  // Use mapped field or fallback to provided sort
+  const actualSortField = sortFieldMap[sort] || sort;
   if (!supabase) {
     return {
       items: [],
@@ -45,7 +59,7 @@ async function fetchSupabaseProducts(page = 1, limit = 20, sort = 'created_at', 
     let query = supabase
       .from('products_v2') // Using products_v2 table
       .select('*', { count: 'exact' })
-      .order(sort, { ascending: order === 'ASC' })
+      .order(actualSortField, { ascending: order === 'ASC' })
       .range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;

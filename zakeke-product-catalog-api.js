@@ -65,8 +65,8 @@ app.get('/products', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const sort = req.query.sort || 'createdOn';
-    const order = req.query.order || 'ASC';
+    const sort = req.query.sort || 'created_at'; // Use created_at instead of createdOn
+    const order = req.query.order || 'DESC'; // Changed to DESC to show newest first
 
     // Fetch products from Supabase
     const supabaseProducts = await fetchSupabaseProducts(page, limit, sort, order);
