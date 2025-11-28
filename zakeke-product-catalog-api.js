@@ -142,6 +142,20 @@ app.get('/schema', async (req, res) => {
   }
 });
 
+// Log all requests before auth (to catch failed auth attempts)
+app.use((req, res, next) => {
+  // Log requests to /products even if auth fails
+  if (req.path === '/products' || req.path.startsWith('/products/')) {
+    console.log('🔍 Request to /products detected');
+    console.log('   Path:', req.path);
+    console.log('   Method:', req.method);
+    console.log('   User-Agent:', req.headers['user-agent'] || 'undefined');
+    console.log('   Authorization:', req.headers['authorization'] ? 'Present' : 'Missing');
+    console.log('   Query:', JSON.stringify(req.query));
+  }
+  next();
+});
+
 // Apply auth to all other routes
 app.use(authMiddleware);
 
