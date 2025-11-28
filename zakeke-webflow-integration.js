@@ -133,52 +133,127 @@ function setupCustomizerButton(customizer, productId, variantId) {
   }
 }
 
-// Open Zakeke customizer using iframe (Zakeke's standard approach)
+// Open Zakeke customizer using Configurator UI API
 async function openCustomizerIframe(productId, variantId) {
   console.log('Zakeke: Opening customizer iframe for product:', productId);
   
   // Create modal/iframe container
   const modal = createCustomizerModal();
   document.body.appendChild(modal);
-
-  // Use your customizer page first (where you'll embed Zakeke customizer)
-  // Then fall back to Zakeke's URL if needed
-  let customizerUrl = null;
   
-  // Option 1: Use configured store customizer URL (your /customizer page)
-  if (ZAKEKE_CONFIG.storeCustomizerUrl) {
-    customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
-    console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
+  const container = modal.querySelector('.zakeke-customizer-container');
+  
+  // Get product info first (needed for customizer initialization)
+  let productInfo = null;
+  try {
+    productInfo = await getProductInfo(productId, variantId);
+    console.log('Zakeke: Product info loaded:', productInfo);
+  } catch (error) {
+    console.error('Zakeke: Failed to load product info:', error);
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center;">
+        <p><strong>Failed to load product information</strong></p>
+        <p>Error: ${error.message}</p>
+      </div>
+    `;
+    return;
   }
   
-  // Option 2: Build URL from store origin (fallback to your domain)
+  // Get customizer URL from Zakeke API
+  let customizerUrl = null;
+  try {
+    // Try to get customizer URL from Configurator API
+    const configuratorApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/configurator/url`;
+    const configuratorResponse = await fetch(configuratorApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        productId: productId,
+        variantId: variantId,
+        quantity: 1
+      })
+    });
+    
+    if (configuratorResponse.ok) {
+      const configuratorData = await configuratorResponse.json();
+      if (configuratorData.url) {
+        customizerUrl = configuratorData.url;
+        console.log('Zakeke: Got customizer URL from Configurator API:', customizerUrl);
+      }
+    }
+  } catch (error) {
+    console.warn('Zakeke: Could not get customizer URL from API:', error);
+  }
+  
+  // Fallback: Build Zakeke customizer URL
   if (!customizerUrl) {
-    const storeOrigin = window.location.origin;
-    customizerUrl = `${storeOrigin}/customizer`;
+    // Use Zakeke's customizer domain - format may vary by account
+    // Try different URL formats
+    const possibleUrls = [
+      `https://customizer.zakeke.com/?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}`,
+      `https://${ZAKEKE_CONFIG.tenantId}.customizer.zakeke.com/?productid=${productId}`,
+      `https://customizer.zakeke.com/configurator?tenant=${ZAKEKE_CONFIG.tenantId}&productid=${productId}`
+    ];
+    
+    customizerUrl = possibleUrls[0]; // Start with first option
     console.log('Zakeke: Using fallback customizer URL:', customizerUrl);
   }
   
-  // Build URL with parameters (lowercase as per Cart API docs)
-  const iframeUrl = new URL(customizerUrl);
-  iframeUrl.searchParams.set('productid', productId);
-  iframeUrl.searchParams.set('quantity', '1');
-  if (variantId) {
-    iframeUrl.searchParams.set('variantid', variantId);
-  }
-  
-  console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
-
-  // Create iframe
+  // Create iframe for Zakeke customizer
   const iframe = document.createElement('iframe');
-  iframe.src = iframeUrl.toString();
+  iframe.id = 'zakeke-customizer-iframe';
+  iframe.src = customizerUrl;
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = 'none';
   iframe.setAttribute('allow', 'camera; microphone; fullscreen');
   iframe.setAttribute('allowfullscreen', 'true');
   
-  const container = modal.querySelector('.zakeke-customizer-container');
   container.appendChild(iframe);
+  
+  // Wait for iframe to load, then send initialization message
+  iframe.onload = () => {
+    console.log('Zakeke: Customizer iframe loaded, sending initialization message');
+    
+    // Send postMessage to initialize customizer (Configurator UI API)
+    const initMessage = {
+      type: 'init',
+      productId: productId,
+      variantId: variantId,
+      quantity: 1,
+      currency: productInfo?.currency || 'USD',
+      language: 'en',
+      tenantId: ZAKEKE_CONFIG.tenantId
+    };
+    
+    iframe.contentWindow.postMessage(initMessage, '*');
+    console.log('Zakeke: Initialization message sent:', initMessage);
+  };
+  
+  // Listen for messages from the customizer iframe
+  window.addEventListener('message', function handleZakekeMessage(event) {
+    // Verify message is from Zakeke domain (in production, check event.origin)
+    if (event.data && typeof event.data === 'object') {
+      console.log('Zakeke: Message received from customizer:', event.data);
+      
+      // Handle different message types
+      if (event.data.type === 'customization-complete') {
+        console.log('Zakeke: Customization completed', event.data);
+        // Handle customization completion
+      } else if (event.data.type === 'add-to-cart') {
+        console.log('Zakeke: Add to cart requested', event.data);
+        // Handle add to cart
+        if (event.data.customizationData) {
+          addToCart(event.data.customizationData);
+        }
+      } else if (event.data.type === 'error') {
+        console.error('Zakeke: Customizer error:', event.data.error);
+      }
+    }
+  });
   
   // Handle iframe load errors
   iframe.onerror = () => {
@@ -186,7 +261,7 @@ async function openCustomizerIframe(productId, variantId) {
     container.innerHTML = `
       <div style="padding: 20px; text-align: center;">
         <p><strong>Failed to load Zakeke customizer</strong></p>
-        <p>URL: ${iframeUrl.toString()}</p>
+        <p>URL: ${customizerUrl}</p>
         <p>Please check:</p>
         <ul style="text-align: left; display: inline-block;">
           <li>Your Zakeke configuration in the dashboard</li>
@@ -197,7 +272,7 @@ async function openCustomizerIframe(productId, variantId) {
     `;
   };
   
-  console.log('Zakeke: Customizer iframe created and loaded');
+  console.log('Zakeke: Customizer iframe created, loading:', customizerUrl);
 }
 
 // Legacy function for compatibility
