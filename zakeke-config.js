@@ -25,8 +25,9 @@ const ZAKEKE_CONFIG = {
   customizerUrl: 'https://customizer.zakeke.com', // Legacy, may not work
   // Store customizer URL - your Webflow domain
   // Based on Zakeke Cart API, format should be: https://your-store.com/customizer.html
-  // If you have a custom customizer page in Webflow, update this URL
-  storeCustomizerUrl: 'https://www.urnory.com/customizer.html' // Your Webflow domain
+  // Using staging URL for testing: https://pss-5215cc.webflow.io/
+  // For production, change to: https://www.urnory.com/customizer.html
+  storeCustomizerUrl: 'https://pss-5215cc.webflow.io/customizer.html' // Staging Webflow domain
 };
 
 // Store for cart items
