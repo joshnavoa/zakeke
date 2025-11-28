@@ -15,7 +15,7 @@ Your `/customizer` page needs to initialize the Zakeke customizer. Add this code
 Copy and paste this entire code block into the **Footer Code** section:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/joshnavoa/zakeke@e774c15/customizer-page-init.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/joshnavoa/zakeke@c193cf8/customizer-page-init.js"></script>
 ```
 
 **OR** if you prefer to inline the code (recommended for better control):
