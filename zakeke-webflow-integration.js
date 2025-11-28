@@ -117,13 +117,16 @@ function setupCustomizerButton(customizer, productId, variantId) {
 
   // Check if button already has our handler (avoid duplicates)
   if (!customizerButton.hasAttribute('data-zakeke-handler-attached')) {
-    // Add click handler - use iframe-based customizer
-    customizerButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Zakeke: Button clicked, opening customizer...');
-      openCustomizerIframe(productId, variantId);
-    });
+  // Add click handler - use iframe-based customizer
+  customizerButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Zakeke: Button clicked, opening customizer...');
+    console.log('Zakeke: Product ID:', productId);
+    console.log('Zakeke: Variant ID:', variantId);
+    console.log('Zakeke: Store Customizer URL:', ZAKEKE_CONFIG.storeCustomizerUrl);
+    openCustomizerIframe(productId, variantId);
+  });
     
     // Mark as having handler attached
     customizerButton.setAttribute('data-zakeke-handler-attached', 'true');
@@ -217,6 +220,23 @@ async function openCustomizerIframe(productId, variantId) {
   }
   
   console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
+  console.log('Zakeke: This should be your customizer page, NOT WordPress!');
+  
+  // Verify URL doesn't contain WordPress
+  if (iframeUrl.toString().includes('wordpress') || iframeUrl.toString().includes('translate.zakeke.com')) {
+    console.error('Zakeke: WARNING - URL contains WordPress! Using fallback to your customizer page.');
+    const storeOrigin = window.location.origin;
+    const fallbackUrl = new URL(`${storeOrigin}/customizer`);
+    fallbackUrl.searchParams.set('productid', productId);
+    fallbackUrl.searchParams.set('quantity', '1');
+    if (variantId) {
+      fallbackUrl.searchParams.set('variantid', variantId);
+    }
+    console.log('Zakeke: Using safe fallback URL:', fallbackUrl.toString());
+    // Update iframeUrl to use fallback
+    Object.setPrototypeOf(iframeUrl, URL.prototype);
+    iframeUrl.href = fallbackUrl.toString();
+  }
   
   // Create iframe for Zakeke customizer
   const iframe = document.createElement('iframe');
