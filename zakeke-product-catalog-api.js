@@ -172,8 +172,10 @@ app.get('/products', async (req, res) => {
     // Add customizable flag
     // By default, mark all products as customizable (Zakeke might only show customizable products)
     products.forEach(product => {
-      // Check if explicitly marked, otherwise default to true
+      // Check if explicitly marked in our set, otherwise default to true
       product.customizable = customizableProducts.has(product.id) || customizableProducts.has(product.code) || true;
+      // Always set to true for now - Zakeke might filter out non-customizable products
+      product.customizable = true;
     });
 
     // Check if client expects simple array format (some integrations do)
