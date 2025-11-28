@@ -238,7 +238,7 @@ async function openCustomizerIframe(productId, variantId) {
   };
   
   // Listen for messages from the customizer iframe
-  window.addEventListener('message', function handleZakekeMessage(event) {
+  const messageHandler = async function handleZakekeMessage(event) {
     // Verify message is from Zakeke domain (in production, check event.origin)
     if (event.data && typeof event.data === 'object') {
       console.log('Zakeke: Message received from customizer:', event.data);
@@ -247,17 +247,68 @@ async function openCustomizerIframe(productId, variantId) {
       if (event.data.type === 'customization-complete') {
         console.log('Zakeke: Customization completed', event.data);
         // Handle customization completion
-      } else if (event.data.type === 'add-to-cart') {
+      } else if (event.data.type === 'add-to-cart' || event.data.action === 'add-to-cart') {
         console.log('Zakeke: Add to cart requested', event.data);
-        // Handle add to cart
-        if (event.data.customizationData) {
-          addToCart(event.data.customizationData);
+        
+        // Prepare customization data
+        const customizationData = {
+          productId: event.data.productId || productId,
+          variantId: event.data.variantId || variantId,
+          quantity: event.data.quantity || 1,
+          price: event.data.price || productInfo?.price || 0,
+          previewImage: event.data.previewImage || event.data.image,
+          customizationData: event.data.customizationData || event.data.data,
+          customizationId: event.data.customizationId || event.data.id || Date.now().toString()
+        };
+        
+        try {
+          // Add to cart
+          const result = await addToCart(customizationData);
+          
+          if (result.success) {
+            console.log('Zakeke: Item added to cart successfully', result);
+            
+            // Show success message
+            showCartNotification('Product added to cart!', 'success');
+            
+            // Send success message back to iframe
+            if (iframe.contentWindow) {
+              iframe.contentWindow.postMessage({
+                type: 'cart-added',
+                success: true,
+                cartItemId: result.cartItemId
+              }, '*');
+            }
+          } else {
+            throw new Error(result.error || 'Failed to add to cart');
+          }
+        } catch (error) {
+          console.error('Zakeke: Error adding to cart:', error);
+          showCartNotification('Failed to add to cart: ' + error.message, 'error');
+          
+          // Send error message back to iframe
+          if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'cart-error',
+              error: error.message
+            }, '*');
+          }
         }
-      } else if (event.data.type === 'error') {
-        console.error('Zakeke: Customizer error:', event.data.error);
+      } else if (event.data.type === 'error' || event.data.type === 'customizer-error') {
+        console.error('Zakeke: Customizer error:', event.data.error || event.data);
+      } else if (event.data.type === 'close' || event.data.action === 'close') {
+        // Close customizer modal
+        console.log('Zakeke: Close customizer requested');
+        modal.remove();
+        window.removeEventListener('message', messageHandler);
       }
     }
-  });
+  };
+  
+  window.addEventListener('message', messageHandler);
+  
+  // Store handler reference for cleanup
+  modal._zakekeMessageHandler = messageHandler;
   
   // Handle iframe load errors
   iframe.onerror = () => {
@@ -316,6 +367,61 @@ function createCustomizerModal() {
   });
 
   return modal;
+}
+
+// Show cart notification
+function showCartNotification(message, type = 'success') {
+  // Remove existing notification if any
+  const existing = document.querySelector('.zakeke-cart-notification');
+  if (existing) {
+    existing.remove();
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `zakeke-cart-notification zakeke-cart-notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  // Add animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  `;
+  if (!document.querySelector('#zakeke-notification-styles')) {
+    style.id = 'zakeke-notification-styles';
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
 }
 
 // Initialize checkout integration
