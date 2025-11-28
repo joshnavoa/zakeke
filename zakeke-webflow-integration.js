@@ -141,59 +141,30 @@ async function openCustomizerIframe(productId, variantId) {
   const modal = createCustomizerModal();
   document.body.appendChild(modal);
 
-  // Zakeke customizer should be loaded from Zakeke's servers, not our own page
-  // Based on Zakeke Configurator UI API, we need to use their customizer URL
-  // Format: https://customizer.zakeke.com/?tenant=XXX&productid=YYY&variantid=ZZZ
-  // OR use the Configurator UI API to embed directly
-  
-  // Try to get customizer URL from Zakeke API first
+  // Use your customizer page first (where you'll embed Zakeke customizer)
+  // Then fall back to Zakeke's URL if needed
   let customizerUrl = null;
   
-  try {
-    // Option 1: Try Configurator UI API to get customizer URL
-    const configuratorApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/configurator/url`;
-    const configuratorResponse = await fetch(configuratorApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        productId: productId,
-        variantId: variantId,
-        quantity: 1
-      })
-    });
-    
-    if (configuratorResponse.ok) {
-      const configuratorData = await configuratorResponse.json();
-      if (configuratorData.url) {
-        customizerUrl = configuratorData.url;
-        console.log('Zakeke: Got customizer URL from Configurator API:', customizerUrl);
-      }
-    }
-  } catch (error) {
-    console.warn('Zakeke: Could not get customizer URL from Configurator API:', error);
+  // Option 1: Use configured store customizer URL (your /customizer page)
+  if (ZAKEKE_CONFIG.storeCustomizerUrl) {
+    customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+    console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
   }
   
-  // Option 2: Build Zakeke customizer URL directly (standard format)
+  // Option 2: Build URL from store origin (fallback to your domain)
   if (!customizerUrl) {
-    // Use Zakeke's customizer domain with proper parameters
-    // Note: This might need to be configured in your Zakeke dashboard
-    const zakekeCustomizerBase = 'https://customizer.zakeke.com';
-    customizerUrl = new URL(zakekeCustomizerBase);
-    customizerUrl.searchParams.set('tenant', ZAKEKE_CONFIG.tenantId);
-    customizerUrl.searchParams.set('productid', productId);
-    customizerUrl.searchParams.set('quantity', '1');
-    if (variantId) {
-      customizerUrl.searchParams.set('variantid', variantId);
-    }
-    customizerUrl = customizerUrl.toString();
-    console.log('Zakeke: Using Zakeke customizer URL:', customizerUrl);
+    const storeOrigin = window.location.origin;
+    customizerUrl = `${storeOrigin}/customizer`;
+    console.log('Zakeke: Using fallback customizer URL:', customizerUrl);
   }
   
-  // Build final iframe URL
+  // Build URL with parameters (lowercase as per Cart API docs)
   const iframeUrl = new URL(customizerUrl);
+  iframeUrl.searchParams.set('productid', productId);
+  iframeUrl.searchParams.set('quantity', '1');
+  if (variantId) {
+    iframeUrl.searchParams.set('variantid', variantId);
+  }
   
   console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
 
