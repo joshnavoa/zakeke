@@ -376,27 +376,44 @@ app.get('/products/:productId/options', async (req, res) => {
 
     // Transform variants to Zakeke options format
     // Zakeke expects: [{code, name, values: [{code, name, metadata: {}}], metadata: {}}]
-    // If no variants, return empty array (not null/undefined)
-    const options = variants.length > 0 ? variants.map(variant => {
-      const optionValues = variant.values || [{
-        code: variant.code || variant.id || String(variant.id),
-        name: variant.name || 'Default'
+    // If no variants, return a default option structure (Zakeke might expect at least one option)
+    let options;
+    if (variants.length > 0) {
+      options = variants.map(variant => {
+        const optionValues = variant.values || [{
+          code: variant.code || variant.id || String(variant.id),
+          name: variant.name || 'Default'
+        }];
+        
+        // Ensure each value has metadata
+        const valuesWithMetadata = optionValues.map(val => ({
+          code: val.code || String(val.id || 'default'),
+          name: val.name || 'Default',
+          metadata: val.metadata || {}
+        }));
+        
+        return {
+          code: variant.code || variant.id || String(variant.id),
+          name: variant.name || 'Default',
+          values: valuesWithMetadata,
+          // Add metadata as empty object if not present (to prevent undefined errors)
+          metadata: variant.metadata || {}
+        };
+      });
+    } else {
+      // No variants - return default option structure to prevent Zakeke errors
+      // Zakeke might expect at least one option group even for products without variants
+      options = [{
+        code: 'default',
+        name: 'Default',
+        values: [{
+          code: productId,
+          name: supabaseProduct.name || 'Default',
+          metadata: {}
+        }],
+        metadata: {}
       }];
-      
-      // Ensure each value has metadata
-      const valuesWithMetadata = optionValues.map(val => ({
-        ...val,
-        metadata: val.metadata || {}
-      }));
-      
-      return {
-        code: variant.code || variant.id || String(variant.id),
-        name: variant.name || 'Default',
-        values: valuesWithMetadata,
-        // Add metadata as empty object if not present (to prevent undefined errors)
-        metadata: variant.metadata || {}
-      };
-    }) : [];
+    }
 
     // Always return an array, even if empty
     // Zakeke expects: [] not null or undefined
