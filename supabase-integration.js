@@ -237,15 +237,79 @@ async function fetchSupabaseProductVariants(productId) {
  * Adjust field mappings based on your Supabase schema
  */
 function transformSupabaseProduct(supabaseProduct) {
+  // Log first product to see actual structure (for debugging)
+  if (!transformSupabaseProduct._logged) {
+    console.log('📋 Sample product structure from Supabase:');
+    console.log('Columns:', Object.keys(supabaseProduct));
+    console.log('Sample:', JSON.stringify(supabaseProduct, null, 2));
+    transformSupabaseProduct._logged = true;
+  }
+
+  // Try to find ID field (common variations)
+  const id = supabaseProduct.id || 
+             supabaseProduct.product_id || 
+             supabaseProduct.uuid || 
+             String(Object.values(supabaseProduct)[0]);
+
+  // Try to find name field
+  const name = supabaseProduct.name || 
+               supabaseProduct.title || 
+               supabaseProduct.product_name ||
+               supabaseProduct.name_en ||
+               'Unnamed Product';
+
+  // Try to find description
+  const description = supabaseProduct.description || 
+                      supabaseProduct.desc || 
+                      supabaseProduct.details ||
+                      supabaseProduct.description_en ||
+                      '';
+
+  // Try to find price (handle different formats)
+  let price = 0;
+  if (supabaseProduct.price) {
+    price = parseFloat(supabaseProduct.price);
+  } else if (supabaseProduct.price_amount) {
+    price = parseFloat(supabaseProduct.price_amount);
+  } else if (supabaseProduct.price_cents) {
+    price = parseFloat(supabaseProduct.price_cents) / 100;
+  } else if (supabaseProduct.amount) {
+    price = parseFloat(supabaseProduct.amount);
+  } else if (supabaseProduct.cost) {
+    price = parseFloat(supabaseProduct.cost);
+  }
+
+  // Try to find image
+  const image = supabaseProduct.image || 
+                supabaseProduct.image_url || 
+                supabaseProduct.main_image ||
+                supabaseProduct.photo ||
+                supabaseProduct.thumbnail ||
+                supabaseProduct.images?.[0] ||
+                '';
+
+  // Try to find SKU
+  const sku = supabaseProduct.sku || 
+              supabaseProduct.product_sku || 
+              supabaseProduct.code ||
+              '';
+
+  // Try to find stock
+  const stock = supabaseProduct.stock || 
+                supabaseProduct.inventory || 
+                supabaseProduct.quantity || 
+                supabaseProduct.qty ||
+                null;
+
   return {
-    id: String(supabaseProduct.id), // Zakeke expects string IDs
-    name: supabaseProduct.name || supabaseProduct.title || 'Unnamed Product',
-    description: supabaseProduct.description || supabaseProduct.desc || '',
-    price: parseFloat(supabaseProduct.price || supabaseProduct.price_amount || 0),
+    id: String(id), // Zakeke expects string IDs
+    name: name,
+    description: description,
+    price: price,
     currency: supabaseProduct.currency || 'USD',
-    image: supabaseProduct.image || supabaseProduct.image_url || supabaseProduct.main_image || '',
-    sku: supabaseProduct.sku || supabaseProduct.product_sku || '',
-    stock: supabaseProduct.stock || supabaseProduct.inventory || supabaseProduct.quantity || null,
+    image: image,
+    sku: sku,
+    stock: stock,
     // Add other fields as needed
     // category: supabaseProduct.category,
     // tags: supabaseProduct.tags,
