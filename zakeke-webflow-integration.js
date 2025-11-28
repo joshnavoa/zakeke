@@ -134,38 +134,66 @@ function setupCustomizerButton(customizer, productId, variantId) {
 }
 
 // Open Zakeke customizer using iframe (Zakeke's standard approach)
-function openCustomizerIframe(productId, variantId) {
+async function openCustomizerIframe(productId, variantId) {
   console.log('Zakeke: Opening customizer iframe for product:', productId);
   
   // Create modal/iframe container
   const modal = createCustomizerModal();
   document.body.appendChild(modal);
 
-  // Build Zakeke customizer iframe URL
-  // Based on Zakeke Cart API documentation, the customizer URL format should be:
-  // https://your-store.com/customizer.html?productid=XXX&quantity=1
-  // OR use the Zakeke API to get the customizer URL
-  // For now, we'll try using the store's domain (current page origin) + /customizer.html
-  // If that doesn't work, you may need to configure the customizer URL in Zakeke dashboard
+  // Try to get customizer URL from Zakeke Cart API first
+  // If that fails, fall back to configured URL
+  let customizerUrl = null;
   
-  // Option 1: Use your store's customizer URL (if configured in Zakeke)
-  const storeOrigin = window.location.origin;
-  let customizerBaseUrl = `${storeOrigin}/customizer.html`;
+  try {
+    // Option 1: Try to get customizer URL from Cart API
+    const cartApiUrl = `${ZAKEKE_CONFIG.apiUrl}/api/v2/cart/customizer-url`;
+    const response = await fetch(cartApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        productId: productId,
+        variantId: variantId,
+        quantity: 1
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.customizerUrl) {
+        customizerUrl = data.customizerUrl;
+        console.log('Zakeke: Got customizer URL from Cart API:', customizerUrl);
+      }
+    }
+  } catch (error) {
+    console.warn('Zakeke: Could not get customizer URL from Cart API:', error);
+  }
   
-  // Option 2: If customizer URL is configured in Zakeke config, use that
-  if (ZAKEKE_CONFIG.storeCustomizerUrl) {
-    customizerBaseUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+  // Option 2: Use configured store customizer URL
+  if (!customizerUrl && ZAKEKE_CONFIG.storeCustomizerUrl) {
+    customizerUrl = ZAKEKE_CONFIG.storeCustomizerUrl;
+    console.log('Zakeke: Using configured store customizer URL:', customizerUrl);
+  }
+  
+  // Option 3: Build URL from store origin (fallback)
+  if (!customizerUrl) {
+    const storeOrigin = window.location.origin;
+    customizerUrl = `${storeOrigin}/customizer.html`;
+    console.log('Zakeke: Using fallback customizer URL:', customizerUrl);
   }
   
   // Build URL with parameters (lowercase as per Cart API docs)
-  const iframeUrl = new URL(customizerBaseUrl);
+  const iframeUrl = new URL(customizerUrl);
   iframeUrl.searchParams.set('productid', productId);
   iframeUrl.searchParams.set('quantity', '1');
   if (variantId) {
     iframeUrl.searchParams.set('variantid', variantId);
   }
   
-  console.log('Zakeke: Customizer iframe URL:', iframeUrl.toString());
+  console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
 
   // Create iframe
   const iframe = document.createElement('iframe');
@@ -178,6 +206,23 @@ function openCustomizerIframe(productId, variantId) {
   
   const container = modal.querySelector('.zakeke-customizer-container');
   container.appendChild(iframe);
+  
+  // Handle iframe load errors
+  iframe.onerror = () => {
+    console.error('Zakeke: Failed to load customizer iframe');
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center;">
+        <p><strong>Failed to load Zakeke customizer</strong></p>
+        <p>URL: ${iframeUrl.toString()}</p>
+        <p>Please check:</p>
+        <ul style="text-align: left; display: inline-block;">
+          <li>Your Zakeke configuration in the dashboard</li>
+          <li>That the customizer URL is correctly configured</li>
+          <li>That the product is published in Zakeke</li>
+        </ul>
+      </div>
+    `;
+  };
   
   console.log('Zakeke: Customizer iframe created and loaded');
 }
