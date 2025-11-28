@@ -236,7 +236,8 @@ app.get('/products/search', async (req, res) => {
     
     const products = supabaseProducts.items || supabaseProducts.products || [];
     products.forEach(product => {
-      product.customizable = customizableProducts.has(product.id);
+      // Mark all products as customizable by default
+      product.customizable = true;
     });
 
     res.json({
