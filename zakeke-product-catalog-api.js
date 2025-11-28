@@ -70,8 +70,8 @@ app.get('/', async (req, res) => {
   console.log('   Query params:', JSON.stringify(req.query));
   
   // If Zakeke calls root with page parameter, they expect products here
-  if (req.query.page || req.query.limit) {
-    console.log('   ✅ Zakeke called root with pagination params - returning products');
+  if (req.query.page || req.query.limit || req.query.search) {
+    console.log('   ✅ Zakeke called root with pagination/search params - returning products');
     
     // Check if auth is present (Zakeke sends auth even to root)
     const hasAuth = req.headers['authorization'];
@@ -88,12 +88,23 @@ app.get('/', async (req, res) => {
       const limit = parseInt(req.query.limit) || 20;
       const sort = req.query.sort || 'created_at';
       const order = req.query.order || 'DESC';
+      const searchQuery = req.query.search || req.query.q;
 
-      // Fetch products from Supabase
-      const supabaseProducts = await fetchSupabaseProducts(page, limit, sort, order);
-      const products = supabaseProducts.items || supabaseProducts.products || [];
+      let supabaseProducts;
+      let products;
 
-      console.log(`   Found ${products.length} products from Supabase`);
+      // Handle search if search parameter is present
+      if (searchQuery) {
+        console.log(`   🔍 Search query: "${searchQuery}"`);
+        supabaseProducts = await searchSupabaseProducts(searchQuery, page, limit);
+        products = supabaseProducts.items || supabaseProducts.products || [];
+        console.log(`   Found ${products.length} products matching "${searchQuery}"`);
+      } else {
+        // Regular product fetch
+        supabaseProducts = await fetchSupabaseProducts(page, limit, sort, order);
+        products = supabaseProducts.items || supabaseProducts.products || [];
+        console.log(`   Found ${products.length} products from Supabase`);
+      }
 
       // Add customizable flag
       products.forEach(product => {
