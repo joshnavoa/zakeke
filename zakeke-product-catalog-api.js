@@ -180,24 +180,21 @@ app.get('/products', async (req, res) => {
     const isZakekeRequest = userAgent.toLowerCase().includes('zakeke') || 
                             req.query.format === 'simple';
 
-    let response;
-    if (isZakekeRequest && req.query.format === 'array') {
-      // Return simple array format (for testing)
-      response = products;
-      console.log('   Returning simple array format');
-    } else {
-      // Standard format with products and pagination
-      response = {
-        products: products,
-        pagination: {
-          page: page,
-          limit: limit,
-          total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
-          totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
-        }
-      };
-      console.log('   Returning standard format with pagination');
-    }
+    console.log('   User-Agent contains "zakeke":', userAgent.toLowerCase().includes('zakeke'));
+    console.log('   Accept header:', acceptHeader);
+
+    // Standard format with products and pagination (Zakeke expects this format)
+    const response = {
+      products: products,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: supabaseProducts.pagination?.total || supabaseProducts.total || products.length,
+        totalPages: Math.ceil((supabaseProducts.pagination?.total || supabaseProducts.total || products.length) / limit)
+      }
+    };
+    
+    console.log('   Returning standard format with pagination');
 
     console.log(`   Returning ${products.length} products`);
     if (products.length > 0) {
