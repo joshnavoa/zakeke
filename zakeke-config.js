@@ -28,27 +28,19 @@ const ZAKEKE_CONFIG = {
 // Store for cart items
 let zakekeCart = [];
 
-// Initialize Zakeke Customizer
+// Initialize Zakeke Customizer (iframe-based, no SDK needed)
+// This function is kept for compatibility but Zakeke uses iframe approach
 function initZakekeCustomizer(productId, variantId = null) {
-  const customizer = new ZakekeCustomizer({
-    tenantId: ZAKEKE_CONFIG.tenantId,
+  // Zakeke uses iframe-based customizer, not a JavaScript SDK
+  // Return a simple object that can be used with openCustomizerIframe
+  return {
     productId: productId,
     variantId: variantId,
-    locale: 'en',
-    onLoad: function() {
-      console.log('Zakeke Customizer loaded');
-    },
-    onError: function(error) {
-      console.error('Zakeke Customizer error:', error);
-    },
-    callbacks: {
-      getProductInfo: getProductInfo,
-      addToCart: addToCart,
-      editAddToCart: editAddToCart
+    open: function(options) {
+      // Legacy support - redirect to iframe approach
+      openCustomizerIframe(productId, variantId);
     }
-  });
-
-  return customizer;
+  };
 }
 
 // Callback: Get product information

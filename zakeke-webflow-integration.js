@@ -6,67 +6,42 @@ if (typeof ZAKEKE_CONFIG === 'undefined') {
   console.error('ZAKEKE_CONFIG not found. Make sure zakeke-config.js is loaded first.');
 }
 
-// Load Zakeke Customizer script
+// Zakeke uses iframe-based customizer, not a JavaScript SDK
+// No need to load external script - we'll use iframe directly
 function loadZakekeScript() {
-  return new Promise((resolve, reject) => {
-    if (window.ZakekeCustomizer) {
-      console.log('Zakeke: Customizer already loaded');
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    const scriptUrl = `${ZAKEKE_CONFIG.customizerUrl}/customizer.js`;
-    console.log('Zakeke: Attempting to load script from:', scriptUrl);
-    
-    script.src = scriptUrl;
-    script.onload = () => {
-      console.log('Zakeke: Script loaded successfully');
-      resolve();
-    };
-    script.onerror = (error) => {
-      console.error('Zakeke: Failed to load customizer script from:', scriptUrl);
-      console.error('Zakeke: Error details:', error);
-      reject(new Error(`Failed to load Zakeke customizer script from ${scriptUrl}. Check if the URL is correct and accessible.`));
-    };
-    document.head.appendChild(script);
-  });
+  // Zakeke customizer is iframe-based, so we don't need to load a script
+  // Just resolve immediately
+  return Promise.resolve();
 }
 
 // Initialize Zakeke on product page
 async function initZakekeOnProductPage() {
   try {
-    // Get product data from Webflow first (before loading script)
+    // Get product data from Webflow
     const productId = getProductIdFromPage();
     const variantId = getVariantIdFromPage();
 
     if (!productId) {
-      console.warn('Product ID not found on page. Make sure you have data-zakeke-product-id attribute.');
+      console.warn('Zakeke: Product ID not found on page. Make sure you have data-zakeke-product-id attribute.');
       return;
     }
 
     console.log('Zakeke: Product ID found:', productId);
+    console.log('Zakeke: Variant ID:', variantId || 'none');
     
-    // Wait for Zakeke script to load
-    console.log('Zakeke: Loading customizer script from:', ZAKEKE_CONFIG.customizerUrl);
+    // Zakeke uses iframe-based customizer, no script to load
     await loadZakekeScript();
-    console.log('Zakeke: Customizer script loaded successfully');
 
-    // Initialize customizer
-    const customizer = initZakekeCustomizer(productId, variantId);
+    // Add customizer button/trigger (iframe will be created when button is clicked)
+    setupCustomizerButton(null, productId, variantId);
 
-    // Add customizer button/trigger
-    setupCustomizerButton(customizer, productId, variantId);
-
-    console.log('Zakeke: Initialization complete');
-    return customizer;
+    console.log('Zakeke: Initialization complete - ready to open customizer');
+    return { productId, variantId };
   } catch (error) {
     console.error('Error initializing Zakeke:', error);
     console.error('Error details:', {
       message: error.message,
-      stack: error.stack,
-      type: error.type,
-      target: error.target
+      stack: error.stack
     });
   }
 }
@@ -127,27 +102,59 @@ function setupCustomizerButton(customizer, productId, variantId) {
     const addToCartButton = document.querySelector('[data-wf-add-to-cart]');
     if (addToCartButton && addToCartButton.parentElement) {
       addToCartButton.parentElement.insertBefore(customizerButton, addToCartButton);
+    } else {
+      // If no add to cart button, append to product container
+      const productContainer = document.querySelector('[data-zakeke-product-id]');
+      if (productContainer) {
+        productContainer.appendChild(customizerButton);
+      }
     }
   }
 
-  // Add click handler
-  customizerButton.addEventListener('click', () => {
-    openCustomizer(customizer, productId, variantId);
+  // Add click handler - use iframe-based customizer
+  customizerButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    openCustomizerIframe(productId, variantId);
   });
 }
 
-// Open Zakeke customizer
-function openCustomizer(customizer, productId, variantId) {
+// Open Zakeke customizer using iframe (Zakeke's standard approach)
+function openCustomizerIframe(productId, variantId) {
+  console.log('Zakeke: Opening customizer iframe for product:', productId);
+  
   // Create modal/iframe container
   const modal = createCustomizerModal();
   document.body.appendChild(modal);
 
-  // Initialize customizer in modal
-  customizer.open({
-    container: modal.querySelector('.zakeke-customizer-container'),
-    productId: productId,
-    variantId: variantId
-  });
+  // Build Zakeke customizer iframe URL
+  // Format: https://customizer.zakeke.com/?tenantId=XXX&productId=YYY&variantId=ZZZ
+  const iframeUrl = new URL(`${ZAKEKE_CONFIG.customizerUrl}/`);
+  iframeUrl.searchParams.set('tenantId', ZAKEKE_CONFIG.tenantId);
+  iframeUrl.searchParams.set('productId', productId);
+  if (variantId) {
+    iframeUrl.searchParams.set('variantId', variantId);
+  }
+  
+  console.log('Zakeke: Customizer iframe URL:', iframeUrl.toString());
+
+  // Create iframe
+  const iframe = document.createElement('iframe');
+  iframe.src = iframeUrl.toString();
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = 'none';
+  iframe.setAttribute('allow', 'camera; microphone; fullscreen');
+  iframe.setAttribute('allowfullscreen', 'true');
+  
+  const container = modal.querySelector('.zakeke-customizer-container');
+  container.appendChild(iframe);
+  
+  console.log('Zakeke: Customizer iframe created and loaded');
+}
+
+// Legacy function for compatibility
+function openCustomizer(customizer, productId, variantId) {
+  openCustomizerIframe(productId, variantId);
 }
 
 // Create customizer modal
