@@ -115,20 +115,22 @@ function setupCustomizerButton(customizer, productId, variantId) {
     }
   }
 
-  // Remove any existing listeners to avoid duplicates
-  const newButton = customizerButton.cloneNode(true);
-  customizerButton.parentNode.replaceChild(newButton, customizerButton);
-  customizerButton = newButton;
-
-  // Add click handler - use iframe-based customizer
-  customizerButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Zakeke: Button clicked, opening customizer...');
-    openCustomizerIframe(productId, variantId);
-  });
-  
-  console.log('Zakeke: Button setup complete', customizerButton);
+  // Check if button already has our handler (avoid duplicates)
+  if (!customizerButton.hasAttribute('data-zakeke-handler-attached')) {
+    // Add click handler - use iframe-based customizer
+    customizerButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Zakeke: Button clicked, opening customizer...');
+      openCustomizerIframe(productId, variantId);
+    });
+    
+    // Mark as having handler attached
+    customizerButton.setAttribute('data-zakeke-handler-attached', 'true');
+    console.log('Zakeke: Button setup complete', customizerButton);
+  } else {
+    console.log('Zakeke: Button already has handler attached');
+  }
 }
 
 // Open Zakeke customizer using iframe (Zakeke's standard approach)
