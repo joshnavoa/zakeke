@@ -18,93 +18,22 @@ Copy and paste this entire code block into the **Footer Code** section:
 <script src="https://cdn.jsdelivr.net/gh/joshnavoa/zakeke@c193cf8/customizer-page-init.js"></script>
 ```
 
-**OR** if you prefer to inline the code (recommended for better control):
+The script above now:
 
-```html
-<script>
-// Zakeke Customizer Page Initialization
-// Get product parameters from URL and load Zakeke customizer
+- Loads the official Zakeke UI API script (`customizer.js`)
+- Instantiates `ZakekeDesigner` as described in the Zakeke docs
+- Builds the required `config` object (productId, quantity, callbacks, etc.)
+- Wires Zakeke’s callbacks (`getProductInfo`, `addToCart`, `editAddToCart`, `onBackClicked`) to the existing functions in `zakeke-config.js`
+- Creates the iframe through `customizer.createIframe(config, 'zakeke-container')`
 
-(function() {
-  'use strict';
-  
-  const ZAKEKE_CONFIG = {
-    tenantId: '320250',
-    apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
-    apiUrl: 'https://api.zakeke.com',
-    customizerUrl: 'https://customizer.zakeke.com'
-  };
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const productId = urlParams.get('productid');
-  const variantId = urlParams.get('variantid');
-  const quantity = parseInt(urlParams.get('quantity') || '1', 10);
-  
-  console.log('Zakeke Customizer: Product ID:', productId);
-  
-  if (!productId) {
-    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>Product ID Required</h2></div>';
-    return;
-  }
-  
-  const container = document.createElement('div');
-  container.id = 'zakeke-customizer-container';
-  container.style.cssText = 'width:100%;height:100vh;min-height:600px;position:fixed;top:0;left:0;z-index:9999;background:#fff';
-  document.body.style.cssText = 'margin:0;padding:0;overflow:hidden';
-  document.body.appendChild(container);
-  
-  // Try Configurator API first
-  fetch(`${ZAKEKE_CONFIG.apiUrl}/api/v2/configurator/url`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      productId: productId,
-      variantId: variantId || null,
-      quantity: quantity,
-      tenantId: ZAKEKE_CONFIG.tenantId
-    })
-  })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-    .then(data => {
-      let url = null;
-      if (data.url && !data.url.includes('wordpress')) {
-        url = data.url;
-      } else {
-        // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
-        url = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
-        if (productId) url += `&productid=${productId}`;
-        if (quantity) url += `&quantity=${quantity}`;
-        if (variantId) url += `&variantid=${variantId}`;
-      }
-    
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.cssText = 'width:100%;height:100%;border:none';
-    iframe.setAttribute('allow', 'camera; microphone; fullscreen');
-    iframe.setAttribute('allowfullscreen', 'true');
-    container.appendChild(iframe);
-    console.log('Zakeke Customizer: Loading:', url);
-  })
-  .catch(err => {
-    console.error('Zakeke Customizer: Error:', err);
-    // Format: https://portal.zakeke.com/customizer?tenant=320250&productid=XXX
-    let url = `https://portal.zakeke.com/customizer?tenant=${ZAKEKE_CONFIG.tenantId}`;
-    if (productId) url += `&productid=${productId}`;
-    if (quantity) url += `&quantity=${quantity}`;
-    if (variantId) url += `&variantid=${variantId}`;
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.cssText = 'width:100%;height:100%;border:none';
-    iframe.setAttribute('allow', 'camera; microphone; fullscreen');
-    iframe.setAttribute('allowfullscreen', 'true');
-    container.appendChild(iframe);
-  });
-})();
-</script>
-```
+If you prefer to inline everything manually, replicate the logic inside `customizer-page-init.js` so your page:
+
+1. Creates a container div (id `zakeke-container`)
+2. Loads `https://portal.zakeke.com/scripts/integration/apiV2/customizer.js`
+3. Instantiates `new ZakekeDesigner()`
+4. Passes the config object with the callbacks documented by Zakeke
+
+Refer to [Zakeke’s Customizer UI API docs](https://docs.zakeke.com/docs/API/Integration/Visual-Product-Customizer/customizer-UI-API#2-create-the-customizer-page) for the full list of supported config options.
 
 ### Step 3: Save and Publish
 

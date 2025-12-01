@@ -48,27 +48,58 @@ async function initZakekeOnProductPage() {
 
 // Get product ID from Webflow page
 function getProductIdFromPage() {
-  // Method 1: From data attribute
   const productElement = document.querySelector('[data-zakeke-product-id]');
-  if (productElement) {
-    return productElement.getAttribute('data-zakeke-product-id');
-  }
+  if (productElement) return productElement.getAttribute('data-zakeke-product-id');
 
-  // Method 2: From URL parameter
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('productId')) {
-    return urlParams.get('productId');
-  }
+  if (urlParams.has('productId')) return urlParams.get('productId');
 
-  // Method 3: From Webflow CMS data (adjust based on your setup)
-  if (window.Webflow && window.Webflow.CMS) {
+  if (window.Webflow?.CMS?.getData) {
     const cmsData = window.Webflow.CMS.getData();
-    if (cmsData && cmsData.productId) {
-      return cmsData.productId;
-    }
+    if (cmsData?.productId) return cmsData.productId;
   }
 
   return null;
+}
+
+function getProductNameFromPage() {
+  const nameAttr = document.querySelector('[data-zakeke-product-name]');
+  if (nameAttr) return nameAttr.getAttribute('data-zakeke-product-name');
+
+  const heading = document.querySelector('h1');
+  if (heading) return heading.textContent.trim();
+
+  if (window.Webflow?.CMS?.getData) {
+    const cmsData = window.Webflow.CMS.getData();
+    if (cmsData?.name) return cmsData.name;
+  }
+
+  return '';
+}
+
+function getSelectedAttributesFromPage() {
+  const attributes = {};
+  const attrElements = document.querySelectorAll('[data-zakeke-attribute]');
+  
+  attrElements.forEach((element) => {
+    const key = element.getAttribute('data-zakeke-attribute');
+    if (!key) return;
+
+    let value = '';
+    if (element.tagName === 'SELECT' || element.tagName === 'INPUT') {
+      value = element.value;
+    } else if (element.getAttribute('data-zakeke-attribute-value')) {
+      value = element.getAttribute('data-zakeke-attribute-value');
+    } else {
+      value = element.textContent.trim();
+    }
+
+    if (value) {
+      attributes[key] = value;
+    }
+  });
+
+  return attributes;
 }
 
 // Get variant ID from Webflow page
@@ -217,6 +248,16 @@ async function openCustomizerIframe(productId, variantId) {
   iframeUrl.searchParams.set('quantity', '1');
   if (variantId) {
     iframeUrl.searchParams.set('variantid', variantId);
+  }
+
+  const productName = getProductNameFromPage();
+  if (productName) {
+    iframeUrl.searchParams.set('productname', productName);
+  }
+
+  const selectedAttributes = getSelectedAttributesFromPage();
+  if (selectedAttributes && Object.keys(selectedAttributes).length > 0) {
+    iframeUrl.searchParams.set('attributes', JSON.stringify(selectedAttributes));
   }
   
   console.log('Zakeke: Final customizer iframe URL:', iframeUrl.toString());
