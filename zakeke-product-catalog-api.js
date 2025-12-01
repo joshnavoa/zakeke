@@ -43,6 +43,7 @@ if (!ZAKEKE_CLIENT_ID || !ZAKEKE_SECRET_KEY) {
 
 // Zakeke API configuration (products are in Zakeke)
 const ZAKEKE_API_URL = process.env.ZAKEKE_API_URL || 'https://api.zakeke.com';
+console.log('✅ Using ZAKEKE_API_URL:', ZAKEKE_API_URL);
 
 // Store for customizable products (in production, use a database)
 const customizableProducts = new Set();
