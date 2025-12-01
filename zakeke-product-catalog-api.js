@@ -300,16 +300,19 @@ app.get('/storefront/oauth-token', async (_req, res) => {
   try {
     console.log('🔐 Storefront OAuth token requested');
 
-    const tokenResponse = await fetch(`${ZAKEKE_API_URL}/api/v2/oauth/token`, {
+    const tokenUrl = `${ZAKEKE_API_URL}/api/v2/oauth/token`;
+    const formParams = new URLSearchParams({
+      client_id: ZAKEKE_CLIENT_ID,
+      client_secret: ZAKEKE_SECRET_KEY,
+      grant_type: 'client_credentials'
+    });
+
+    const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: JSON.stringify({
-        client_id: ZAKEKE_CLIENT_ID,
-        client_secret: ZAKEKE_SECRET_KEY,
-        grant_type: 'client_credentials'
-      })
+      body: formParams.toString()
     });
 
     if (!tokenResponse.ok) {
