@@ -26,7 +26,9 @@ const ZAKEKE_CONFIG = {
   // Store customizer URL - your Webflow domain
   // Based on Zakeke Cart API, format should be: https://your-store.com/customizer
   // Production customizer page hosted on Webflow
-  storeCustomizerUrl: 'https://www.urnory.com/customizer'
+  storeCustomizerUrl: 'https://www.urnory.com/customizer',
+  // Server-side proxy (Railway) to avoid browser CORS issues for product info
+  productInfoProxyUrl: 'https://zakeke-production.up.railway.app/storefront/products'
 };
 
 // Store for cart items
@@ -50,27 +52,42 @@ function initZakekeCustomizer(productId, variantId = null) {
 // Callback: Get product information
 async function getProductInfo(productId, variantId) {
   try {
-    const response = await fetch(`${ZAKEKE_CONFIG.apiUrl}/api/v2/products/${productId}`, {
+    const useProxy = Boolean(ZAKEKE_CONFIG.productInfoProxyUrl);
+    const baseUrl = useProxy
+      ? ZAKEKE_CONFIG.productInfoProxyUrl
+      : `${ZAKEKE_CONFIG.apiUrl}/api/v2/products`;
+
+    const normalizedBase = baseUrl.replace(/\/$/, '');
+    const params = variantId ? `?variantId=${encodeURIComponent(variantId)}` : '';
+    const requestUrl = `${normalizedBase}/${encodeURIComponent(productId)}${params}`;
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (!useProxy) {
+      headers['Authorization'] = `Bearer ${ZAKEKE_CONFIG.apiKey}`;
+    }
+
+    const response = await fetch(requestUrl, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${ZAKEKE_CONFIG.apiKey}`,
-        'Content-Type': 'application/json'
-      }
+      headers
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch product (${response.status}): ${errorText || response.statusText}`);
     }
 
     const productData = await response.json();
     
     // Return product info in the format Zakeke expects
     return {
-      id: productData.id,
-      name: productData.name,
-      price: productData.price,
+      id: productData.id || productData.code || productId,
+      name: productData.name || 'Product',
+      price: typeof productData.price === 'number' ? productData.price : Number(productData.price) || 0,
       currency: productData.currency || 'USD',
-      image: productData.image,
+      image: productData.image || productData.thumbnail || '',
       variants: productData.variants || []
     };
   } catch (error) {

@@ -240,6 +240,57 @@ app.use((req, res, next) => {
   next();
 });
 
+/**
+ * GET /storefront/products/:productId
+ * Public endpoint for the storefront (Webflow) to fetch product info via this server.
+ * This avoids browser-side CORS issues when calling Zakeke APIs directly.
+ */
+app.get('/storefront/products/:productId', async (req, res) => {
+  const productId = req.params.productId;
+  const variantId = req.query.variantId;
+
+  console.log('🛍️ Storefront product info requested', {
+    productId,
+    variantId,
+    userAgent: req.headers['user-agent'] || 'undefined'
+  });
+
+  try {
+    const proxyResponse = await fetch(`${ZAKEKE_API_URL}/api/v2/products/${encodeURIComponent(productId)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${ZAKEKE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (proxyResponse.status === 404) {
+      console.log(`   Product ${productId} not found on Zakeke`);
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (!proxyResponse.ok) {
+      const errorText = await proxyResponse.text();
+      console.error('   Failed to fetch product from Zakeke:', proxyResponse.status, errorText);
+      return res.status(proxyResponse.status).json({
+        error: 'Failed to fetch product info',
+        details: errorText
+      });
+    }
+
+    const productData = await proxyResponse.json();
+    const normalized = normalizeProductForStorefront(productData, variantId);
+
+    res.json(normalized);
+  } catch (error) {
+    console.error('   Error in storefront product proxy:', error);
+    res.status(500).json({
+      error: 'Server error fetching product info',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Apply auth to all other routes (except root which handles its own auth)
 app.use((req, res, next) => {
   // Skip auth for root endpoint (it handles auth internally when needed)
@@ -550,6 +601,48 @@ async function fetchZakekeProducts(page = 1, limit = 20, sort = 'createdOn', ord
       }
     };
   }
+}
+
+function normalizeProductForStorefront(productData, variantId) {
+  if (!productData || typeof productData !== 'object') {
+    return {
+      id: variantId || 'unknown',
+      name: 'Product',
+      price: 0,
+      currency: 'USD',
+      image: '',
+      variants: []
+    };
+  }
+
+  const normalized = {
+    id: productData.id || productData.code || productData.productId || 'product',
+    name: productData.name || productData.displayName || 'Product',
+    price: Number(productData.price ?? productData.basePrice ?? 0) || 0,
+    currency: productData.currency || productData.baseCurrency || 'USD',
+    image: productData.image || productData.thumbnail || '',
+    variants: Array.isArray(productData.variants) ? productData.variants : []
+  };
+
+  if (variantId && normalized.variants.length > 0) {
+    const match = normalized.variants.find((variant) => {
+      if (!variant) return false;
+      const variantCodes = [variant.id, variant.code, variant.variantId, variant.sku];
+      return variantCodes.filter(Boolean).some((value) => String(value) === String(variantId));
+    });
+
+    if (match) {
+      const variantPrice = Number(match.price ?? match.basePrice ?? match.salePrice);
+      if (Number.isFinite(variantPrice)) {
+        normalized.price = variantPrice;
+      }
+      if (match.currency) {
+        normalized.currency = match.currency;
+      }
+    }
+  }
+
+  return normalized;
 }
 
 // Helper: Fetch single product from Zakeke API
