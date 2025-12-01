@@ -7,7 +7,9 @@
   const ZAKEKE_CONFIG = {
     tenantId: '320250',
     apiKey: '-XEU886tqcMb-hIjG8P0WTsf4WsgaoEMl1fAcVNOumI.',
-    apiUrl: 'https://api.zakeke.com'
+    apiUrl: 'https://api.zakeke.com',
+    oauthTokenUrl: 'https://zakeke-production-6dc1.up.railway.app/storefront/oauth-token',
+    productInfoProxyUrl: 'https://zakeke-production-6dc1.up.railway.app/storefront/products'
   };
 
   const CUSTOMIZER_SCRIPT_SRC = 'https://portal.zakeke.com/scripts/integration/apiV2/customizer.js';
