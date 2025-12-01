@@ -56,11 +56,11 @@
   ensureContainer();
 
   loadScript(CUSTOMIZER_SCRIPT_SRC)
-    .then(() => {
+    .then(async () => {
       if (typeof ZakekeDesigner === 'undefined') {
         throw new Error('ZakekeDesigner not available after script load');
       }
-      initCustomizer();
+      await initCustomizer();
     })
     .catch((error) => {
       console.error('Zakeke Customizer: Failed to load official script', error);
@@ -111,8 +111,9 @@
   async function initCustomizer() {
     console.log('Zakeke Customizer: Initializing via ZakekeDesigner UI API');
 
+    const tokenOauth = await fetchOauthToken();
     const customizer = new ZakekeDesigner();
-    const config = buildConfig(customizer);
+    const config = buildConfig(tokenOauth);
 
     try {
       customizer.createIframe(config, CONTAINER_ID);
@@ -123,9 +124,9 @@
     }
   }
 
-  function buildConfig(customizerInstance) {
+  function buildConfig(tokenOauth) {
     return {
-      tokenOauth: ZAKEKE_CONFIG.apiKey, // TODO: replace with proper OAuth token from your backend
+      tokenOauth,
       productId,
       productName,
       quantity,
@@ -219,6 +220,29 @@
 
   function normalizeCurrency(value) {
     return typeof value === 'string' && value.trim() ? value : 'USD';
+  }
+
+  async function fetchOauthToken() {
+    if (!ZAKEKE_CONFIG.oauthTokenUrl) {
+      console.warn('Zakeke Customizer: oauthTokenUrl missing in config, using API key fallback');
+      return ZAKEKE_CONFIG.apiKey;
+    }
+
+    try {
+      const response = await fetch(ZAKEKE_CONFIG.oauthTokenUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      if (!data?.token) {
+        throw new Error('OAuth response missing token field');
+      }
+      return data.token;
+    } catch (error) {
+      console.error('Zakeke Customizer: Failed to fetch OAuth token, falling back to API key', error);
+      return ZAKEKE_CONFIG.apiKey;
+    }
   }
 
   function isProductAttributePayload(payload) {

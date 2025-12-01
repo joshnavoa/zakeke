@@ -17,6 +17,7 @@ require('dotenv').config();
 const express = require('express');
 const basicAuth = require('express-basic-auth');
 const cors = require('cors');
+const fetch = require('node-fetch');
 const {
   fetchSupabaseProducts,
   searchSupabaseProducts,
@@ -286,6 +287,50 @@ app.get('/storefront/products/:productId', async (req, res) => {
     console.error('   Error in storefront product proxy:', error);
     res.status(500).json({
       error: 'Server error fetching product info',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+/**
+ * GET /storefront/oauth-token
+ * Public endpoint for the storefront to obtain a short-lived OAuth token
+ */
+app.get('/storefront/oauth-token', async (_req, res) => {
+  try {
+    console.log('🔐 Storefront OAuth token requested');
+
+    const tokenResponse = await fetch(`${ZAKEKE_API_URL}/api/v2/oauth/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: ZAKEKE_CLIENT_ID,
+        client_secret: ZAKEKE_SECRET_KEY,
+        grant_type: 'client_credentials'
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorBody = await tokenResponse.text();
+      console.error('   Failed to fetch OAuth token from Zakeke:', tokenResponse.status, errorBody);
+      return res.status(tokenResponse.status).json({
+        error: 'Failed to fetch OAuth token',
+        details: errorBody
+      });
+    }
+
+    const tokenData = await tokenResponse.json();
+    res.json({
+      token: tokenData.access_token,
+      tokenType: tokenData.token_type,
+      expiresIn: tokenData.expires_in
+    });
+  } catch (error) {
+    console.error('   Error in storefront OAuth proxy:', error);
+    res.status(500).json({
+      error: 'Server error fetching OAuth token',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }

@@ -27,6 +27,7 @@ const ZAKEKE_CONFIG = {
   // Based on Zakeke Cart API, format should be: https://your-store.com/customizer
   // Production customizer page hosted on Webflow
   storeCustomizerUrl: 'https://www.urnory.com/customizer',
+  oauthTokenUrl: 'https://zakeke-production.up.railway.app/storefront/oauth-token',
   // Server-side proxy (Railway) to avoid browser CORS issues for product info
   productInfoProxyUrl: 'https://zakeke-production.up.railway.app/storefront/products'
 };
